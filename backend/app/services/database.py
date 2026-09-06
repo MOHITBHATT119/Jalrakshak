@@ -37,10 +37,14 @@ def _resolve_data_dir() -> str:
 
 DATA_DIR = _resolve_data_dir()
 
-# Always use /tmp for the writable DB so it works on Vercel (read-only /var/task)
-# and locally (where /tmp is also writable). The DB is seeded fresh from CSVs each
-# cold start — this is fine since data is synthetic and read-mostly.
-DB_PATH = os.environ.get("DB_PATH", "/tmp/jalrakshak.db")
+# Always use a writable temp dir for the DB so it works on Vercel (/tmp) and
+# Windows (TEMP/TMP env vars). The DB is seeded fresh from CSVs each cold start —
+# this is fine since data is synthetic and read-mostly.
+def _default_db_path() -> str:
+    tmp = "/tmp" if os.path.isdir("/tmp") else os.environ.get("TEMP", os.environ.get("TMP", os.getcwd()))
+    return os.path.join(tmp, "jalrakshak.db")
+
+DB_PATH = os.environ.get("DB_PATH", _default_db_path())
 
 _lock = threading.Lock()
 
