@@ -19,28 +19,28 @@ def _resolve_data_dir() -> str:
     override = os.environ.get("DATA_DIR")
     if override and os.path.isdir(override):
         return override
-    # Default: relative to this file → ../../../data  (works locally + Docker)
-    local = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../data"))
-    if os.path.isdir(local):
-        return local
-    # Vercel serverless: __file__ is under /var/task/app/services/, data is at /var/task/data/
-    vercel = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../data"))
-    if os.path.isdir(vercel):
-        return vercel
-    return local  # best effort
+
+    candidates = [
+        # Local dev: backend/app/services/ → ../../../data
+        os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../data")),
+        # Vercel serverless: /var/task/app/services/ → /var/task/data/
+        os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../data")),
+        # Vercel alternate: project root /var/task/data
+        "/var/task/data",
+        # CWD-relative fallback
+        os.path.join(os.getcwd(), "data"),
+    ]
+    for c in candidates:
+        if os.path.isdir(c) and os.listdir(c):
+            return c
+    return candidates[0]  # best effort
 
 DATA_DIR = _resolve_data_dir()
 
-def _resolve_db_path() -> str:
-    # On Vercel/serverless, /var/task is read-only; use /tmp for the writable DB copy
-    candidate = os.path.join(DATA_DIR, "jalrakshak.db")
-    if os.path.exists(candidate):
-        return candidate
-    # Try /tmp (writable on Vercel)
-    tmp_path = "/tmp/jalrakshak.db"
-    return tmp_path
-
-DB_PATH = _resolve_db_path()
+# Always use /tmp for the writable DB so it works on Vercel (read-only /var/task)
+# and locally (where /tmp is also writable). The DB is seeded fresh from CSVs each
+# cold start — this is fine since data is synthetic and read-mostly.
+DB_PATH = os.environ.get("DB_PATH", "/tmp/jalrakshak.db")
 
 _lock = threading.Lock()
 
