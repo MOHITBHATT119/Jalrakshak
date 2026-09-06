@@ -145,7 +145,7 @@ const TR: Record<string, string> = {
   /* additional UI / dynamic headings */
   'crops recommended': 'પાકની ભલામણ',
   'crops recommended for': 'માટે પાકની ભલામણ',
-  'Drought Risk': 'દુષ્કાળ જોખમ',
+  // 'Drought Risk' already defined above
   'Drought Risk regime': 'દુષ્કાળ જોખમ સ્થિતિ',
   'risk regime': 'જોખમ સ્થિતિ',
   'Actions': 'ક્રિયાઓ',
@@ -157,10 +157,10 @@ const TR: Record<string, string> = {
   'Suitability': 'યોગ્યતા',
   'Village': 'ગામ',
   'Risk': 'જોખમ',
-  'Season': 'ઋતુ',
+  // 'Season' already defined above
   'Key Metrics': 'મુખ્ય માપદંડો',
   'Cotton': 'કોટન',
-  'This Crop': 'આ પાક',
+  // 'This Crop' already defined above
   'mm water': 'મિમી પાણી',
   'less water than Cotton': 'કોટન કરતાં ઓછું પાણી',
   'saves': 'બચત',
