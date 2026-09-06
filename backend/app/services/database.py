@@ -14,8 +14,33 @@ import sqlite3
 import threading
 from typing import Optional
 
-DB_PATH  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../data/jalrakshak.db")
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../data")
+def _resolve_data_dir() -> str:
+    # Allow override via env var (useful in serverless/container environments)
+    override = os.environ.get("DATA_DIR")
+    if override and os.path.isdir(override):
+        return override
+    # Default: relative to this file → ../../../data  (works locally + Docker)
+    local = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../data"))
+    if os.path.isdir(local):
+        return local
+    # Vercel serverless: __file__ is under /var/task/app/services/, data is at /var/task/data/
+    vercel = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../data"))
+    if os.path.isdir(vercel):
+        return vercel
+    return local  # best effort
+
+DATA_DIR = _resolve_data_dir()
+
+def _resolve_db_path() -> str:
+    # On Vercel/serverless, /var/task is read-only; use /tmp for the writable DB copy
+    candidate = os.path.join(DATA_DIR, "jalrakshak.db")
+    if os.path.exists(candidate):
+        return candidate
+    # Try /tmp (writable on Vercel)
+    tmp_path = "/tmp/jalrakshak.db"
+    return tmp_path
+
+DB_PATH = _resolve_db_path()
 
 _lock = threading.Lock()
 
