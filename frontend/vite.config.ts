@@ -11,5 +11,11 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  define: {
+    // Exposes VITE_API_URL to the app at build time.
+    // Set this env var in Vercel dashboard to your Render backend URL.
+    // Falls back to '' (same-origin / vite proxy) for local dev.
+    __API_BASE__: JSON.stringify(process.env.VITE_API_URL ?? ''),
   }
 })

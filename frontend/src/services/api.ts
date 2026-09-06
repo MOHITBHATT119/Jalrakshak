@@ -2,7 +2,12 @@
 // API key is NEVER handled in the frontend - backend only
 import axios from 'axios';
 
-const API_BASE = '/api/v1';
+// In production (Vercel), VITE_API_URL is set to the Render backend URL.
+// In local dev, it is empty and the Vite proxy forwards /api → localhost:8001.
+declare const __API_BASE__: string;
+const API_BASE = (typeof __API_BASE__ !== 'undefined' && __API_BASE__)
+  ? `${__API_BASE__}/api/v1`
+  : '/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE,

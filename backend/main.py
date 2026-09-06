@@ -25,10 +25,21 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS - only allow frontend origins
+# CORS - allow local dev + any Vercel/Render production URL
+_CORS_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+]
+# Pick up extra origins from env (comma-separated), e.g. CORS_ORIGINS=https://jalrakshak.vercel.app
+_extra = os.environ.get("CORS_ORIGINS", "")
+if _extra:
+    _CORS_ORIGINS += [o.strip() for o in _extra.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
+    allow_origins=_CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.(vercel\.app|onrender\.com|railway\.app)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
