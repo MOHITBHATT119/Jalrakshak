@@ -1,0 +1,19 @@
+village_id,year,structure_type,count,estimated_recharge_mcm,status,notes
+V001,2019,check_dam,12,8.5,operational,Aji river basin
+V001,2020,check_dam,15,10.2,operational,Additional 3 constructed
+V001,2021,farm_pond,45,5.8,operational,Farmer-driven initiative
+V001,2022,recharge_well,120,3.2,operational,MNREGS scheme
+V001,2023,percolation_tank,8,12.5,operational,State govt scheme
+V002,2019,check_dam,18,12.5,operational,Ozat river basin
+V002,2020,check_dam,22,15.2,operational,Expansion
+V002,2021,farm_pond,85,8.5,operational,High adoption
+V002,2022,recharge_well,200,5.8,operational,District scheme
+V003,2019,check_dam,8,6.2,operational,Shallow aquifer area
+V003,2020,recharge_pit,350,4.5,operational,Hard rock recharge
+V003,2021,contour_bund,120,8.8,operational,Watershed development
+V004,2019,check_dam,10,7.5,operational,Coastal creek management
+V004,2020,percolation_tank,6,9.2,operational,Govt scheme
+V007,2019,check_dam,5,3.8,operational,Limited rainfall area
+V007,2020,farm_pond,25,2.5,operational,Pilot scheme
+V007,2021,recharge_well,80,2.1,operational,District initiative
+V007,2022,check_dam,8,5.2,partial,Under construction

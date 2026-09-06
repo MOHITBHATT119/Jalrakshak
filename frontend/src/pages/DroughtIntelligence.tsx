@@ -1,0 +1,931 @@
+import React, { useEffect, useState } from 'react';
+import {
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  ResponsiveContainer,
+  Tooltip
+} from 'recharts';
+import {
+  getVillages,
+  getDroughtRisk,
+  Village
+} from '../services/api';
+import VillageSelect from '../components/VillageSelect';
+import {
+  Thermometer,
+  AlertTriangle,
+  Search,
+  ChevronRight,
+  Zap
+} from 'lucide-react';
+
+interface Props {
+  selectedVillage: string;
+  setSelectedVillage: (v: string) => void;
+  lang: string;
+}
+
+/* ─────────────────────────────────────────────
+   Risk colors
+───────────────────────────────────────────── */
+
+const riskColor = (l: string) =>
+  ({
+    LOW: '#16a34a',
+    MODERATE: '#d97706',
+    HIGH: '#ea580c',
+    SEVERE: '#dc2626'
+  }[l] || 'var(--text-muted)');
+
+/* ─────────────────────────────────────────────
+   Static translations
+───────────────────────────────────────────── */
+
+const T: Record<string, { gu: string }> = {
+  // Header
+  'Drought Intelligence': {
+    gu: 'દુષ્કાળ બુદ્ધિ'
+  },
+
+  'Early warning system — risk assessment across multiple factors': {
+    gu: 'પ્રારંભિક ચેતવણી — બહુવિધ પરિબળોમાં જોખમ મૂલ્યાંકન'
+  },
+
+  'Analyzing drought risk...': {
+    gu: 'દુષ્કાળ જોખમનું વિશ્લેષણ થઈ રહ્યું છે...'
+  },
+
+  // Alerts
+  'SEVERE DROUGHT RISK': {
+    gu: 'ગંભીર દુષ્કાળ જોખમ'
+  },
+
+  'Immediate action required to prevent water crisis.': {
+    gu: 'જળ સંકટ અટકાવવા તાત્કાલિક પગલાં જરૂરી છે.'
+  },
+
+  'HIGH DROUGHT RISK': {
+    gu: 'ઉચ્ચ દુષ્કાળ જોખમ'
+  },
+
+  'Escalate water conservation efforts now.': {
+    gu: 'હાલ જળ સંચયના પ્રયાસો વધારવા જરૂરી છે.'
+  },
+
+  // Risk gauge
+  'Drought Risk Score': {
+    gu: 'દુષ્કાળ જોખમ સ્કોર'
+  },
+
+  'out of 100': {
+    gu: '૧૦૦ માંથી'
+  },
+
+  'DROUGHT RISK': {
+    gu: 'દુષ્કાળ જોખમ'
+  },
+
+  'Confidence:': {
+    gu: 'વિશ્વાસ:'
+  },
+
+  // Radar chart
+  'Risk Factor Breakdown': {
+    gu: 'જોખમ પરિબળ વિભાજન'
+  },
+
+  'Rainfall': {
+    gu: 'વરસાદ'
+  },
+
+  'Groundwater': {
+    gu: 'ભૂગર્ભ જળ'
+  },
+
+  'Demand': {
+    gu: 'માંગ'
+  },
+
+  'Risk contribution': {
+    gu: 'જોખમ ફાળો'
+  },
+
+  // Evidence & Actions
+  'Risk Evidence': {
+    gu: 'જોખમના પુરાવા'
+  },
+
+  'Recommended Actions': {
+    gu: 'ભલામણ કરેલ ક્રિયાઓ'
+  },
+
+  // Risk scale
+  'Drought Risk Scale Reference': {
+    gu: 'દુષ્કાળ જોખમ સ્કેલ સંદર્ભ'
+  },
+
+  'Score:': {
+    gu: 'સ્કોર:'
+  },
+
+  'Normal water availability, preventive monitoring': {
+    gu: 'સામાન્ય જળ ઉપલબ્ધતા, નિવારક નિરીક્ષણ'
+  },
+
+  'Below-average conditions, conservation needed': {
+    gu: 'સરેરાશ કરતાં ઓછી સ્થિતિ, જળ સંરક્ષણ જરૂરી'
+  },
+
+  'Significant stress, active intervention required': {
+    gu: 'નોંધપાત્ર તણાવ, સક્રિય હસ્તક્ષેપ જરૂરી'
+  },
+
+  'Emergency conditions, crisis response activated': {
+    gu: 'કટોકટી સ્થિતિ, કટોકટી પ્રતિસાદ સક્રિય'
+  },
+
+  // Risk levels
+  LOW: {
+    gu: 'નીચું'
+  },
+
+  MODERATE: {
+    gu: 'મધ્યમ'
+  },
+
+  HIGH: {
+    gu: 'ઉચ્ચ'
+  },
+
+  SEVERE: {
+    gu: 'ગંભીર'
+  },
+
+  // Confidence
+  'VERY HIGH': {
+    gu: 'ખૂબ ઉચ્ચ'
+  },
+
+  MEDIUM: {
+    gu: 'મધ્યમ'
+  },
+
+  // Data note
+  'Synthetic demonstration data. Not official government measurements.': {
+    gu: 'સિન્થેટિક ડેમો ડેટા. સત્તાવાર સરકારી માપન નથી.'
+  },
+
+  // Dashboard actions
+  'Monitor groundwater levels weekly': {
+    gu: 'સાપ્તાહિક ભૂગર્ભ જળ સ્તરનું નિરીક્ષણ કરો'
+  },
+
+  'Promote water-efficient irrigation methods': {
+    gu: 'પાણી-કાર્યક્ષમ સિંચાઈ પદ્ધતિઓને પ્રોત્સાહિત કરો'
+  },
+
+  'Plan new recharge structures before next monsoon': {
+    gu: 'આગામી ચોમાસા પહેલાં નવી રિચાર્જ સ્ટ્રક્ચરનું આયોજન કરો'
+  },
+
+  'Encourage drought-tolerant crop adoption': {
+    gu: 'દુષ્કાળ-સહિષ્ણુ પાક અપનાવવા પ્રોત્સાહિત કરો'
+  },
+
+  'Review water allocation among user groups': {
+    gu: 'વપરાશ જૂથો વચ્ચે જળ ફાળવણીની સમીક્ષા કરો'
+  },
+
+  'Alert Gram Panchayat and water committee for action': {
+    gu: 'ગ્રામ પંચાયત અને જળ સમિતિને પગલાં માટે સૂચિત કરો'
+  },
+
+  'Reduce agricultural groundwater extraction by 30%': {
+    gu: 'કૃષિ માટેના ભૂગર્ભ જળ ઉપાડમાં ૩૦% ઘટાડો કરો'
+  },
+
+  'Begin crop substitution planning for next season': {
+    gu: 'આવતી સીઝન માટે પાક બદલવાનું આયોજન શરૂ કરો'
+  },
+
+  'Survey and repair existing recharge structures': {
+    gu: 'હાલની રિચાર્જ સ્ટ્રક્ચરનું સર્વેક્ષણ અને સમારકામ કરો'
+  },
+
+  'Implement micro-irrigation for water-intensive crops': {
+    gu: 'વધુ પાણી વાપરતા પાકો માટે સૂક્ષ્મ સિંચાઈ લાગુ કરો'
+  },
+
+  'Declare drought preparedness - activate emergency water protocols': {
+    gu: 'દુષ્કાળ સજ્જતા જાહેર કરો — કટોકટી જળ પ્રોટોકોલ સક્રિય કરો'
+  },
+
+  'Immediately restrict non-essential groundwater extraction': {
+    gu: 'તાત્કાલિક બિન-જરૂરી ભૂગર્ભ જળ ઉપાડ પર પ્રતિબંધ મૂકો'
+  },
+
+  'Prioritise drinking water supply for all communities': {
+    gu: 'તમામ સમુદાયો માટે પીવાના પાણીના પુરવઠાને પ્રાધાન્ય આપો'
+  },
+
+  'Activate recharge structure maintenance and new construction': {
+    gu: 'રિચાર્જ સ્ટ્રક્ચરની જાળવણી અને નવા બાંધકામને સક્રિય કરો'
+  },
+
+  'Switch remaining crops to drought-tolerant varieties': {
+    gu: 'બાકીના પાકોને દુષ્કાળ-સહિષ્ણુ જાતોમાં બદલો'
+  },
+
+  'Coordinate with district water board for emergency support': {
+    gu: 'કટોકટી સહાય માટે જિલ્લા જળ બોર્ડ સાથે સંકલન કરો'
+  },
+
+  'Continue regular monitoring of groundwater levels': {
+    gu: 'ભૂગર્ભ જળ સ્તરનું નિયમિત નિરીક્ષણ ચાલુ રાખો'
+  },
+
+  'Maintain existing recharge structures': {
+    gu: 'હાલની રિચાર્જ સ્ટ્રક્ચર જાળવો'
+  },
+
+  'Plan for upcoming season water requirements': {
+    gu: 'આવતી સીઝન માટે પાણીની જરૂરિયાતનું આયોજન કરો'
+  }
+};
+
+/* ─────────────────────────────────────────────
+   Static translation helper
+───────────────────────────────────────────── */
+
+function tr(key: string, lang: string): string {
+  return lang === 'gu' && T[key]?.gu
+    ? T[key].gu
+    : key;
+}
+
+/* ─────────────────────────────────────────────
+   Dynamic value translation
+───────────────────────────────────────────── */
+
+function translateValue(
+  value: string | undefined,
+  lang: string
+): string {
+  if (!value) return '—';
+
+  if (lang !== 'gu') {
+    return value;
+  }
+
+  return T[value]?.gu || value;
+}
+
+/* ─────────────────────────────────────────────
+   Dynamic evidence translation
+
+   Handles API-generated text such as:
+
+   High rainfall deficit: -39% below average
+   Moderate groundwater stress: 0.5m/year decline
+   Significant water deficit: 79 MCM
+
+   Numbers remain dynamic.
+───────────────────────────────────────────── */
+
+function translateEvidence(
+  text: string,
+  lang: string
+): string {
+  if (!text || lang !== 'gu') {
+    return text;
+  }
+
+  /* High rainfall deficit */
+  const rainfall = text.match(
+    /High rainfall deficit:\s*([+-]?\d+(?:\.\d+)?)%\s*below average/i
+  );
+
+  if (rainfall) {
+    const percentage = rainfall[1];
+
+    return `વરસાદમાં મોટો ઘટાડો: સરેરાશ કરતાં ${percentage}% ઓછો`;
+  }
+
+  /* Moderate rainfall deficit */
+  const moderateRainfall = text.match(
+    /Moderate rainfall deficit:\s*([+-]?\d+(?:\.\d+)?)%\s*below average/i
+  );
+
+  if (moderateRainfall) {
+    const percentage = moderateRainfall[1];
+
+    return `મધ્યમ વરસાદમાં ઘટાડો: સરેરાશ કરતાં ${percentage}% ઓછો`;
+  }
+
+  /* Significant rainfall deficit */
+  const significantRainfall = text.match(
+    /Significant rainfall deficit:\s*([+-]?\d+(?:\.\d+)?)%\s*below average/i
+  );
+
+  if (significantRainfall) {
+    const percentage = significantRainfall[1];
+
+    return `નોંધપાત્ર વરસાદમાં ઘટાડો: સરેરાશ કરતાં ${percentage}% ઓછો`;
+  }
+
+  /* Moderate groundwater stress */
+  const groundwater = text.match(
+    /Moderate groundwater stress:\s*([+-]?\d+(?:\.\d+)?)m\/year decline/i
+  );
+
+  if (groundwater) {
+    const decline = groundwater[1];
+
+    return `મધ્યમ ભૂગર્ભ જળ તણાવ: દર વર્ષે ${decline} મીટરનો ઘટાડો`;
+  }
+
+  /* High groundwater stress */
+  const highGroundwater = text.match(
+    /High groundwater stress:\s*([+-]?\d+(?:\.\d+)?)m\/year decline/i
+  );
+
+  if (highGroundwater) {
+    const decline = highGroundwater[1];
+
+    return `ઉચ્ચ ભૂગર્ભ જળ તણાવ: દર વર્ષે ${decline} મીટરનો ઘટાડો`;
+  }
+
+  /* Severe groundwater stress */
+  const severeGroundwater = text.match(
+    /Severe groundwater stress:\s*([+-]?\d+(?:\.\d+)?)m\/year decline/i
+  );
+
+  if (severeGroundwater) {
+    const decline = severeGroundwater[1];
+
+    return `ગંભીર ભૂગર્ભ જળ તણાવ: દર વર્ષે ${decline} મીટરનો ઘટાડો`;
+  }
+
+  /* Significant water deficit */
+  const waterDeficit = text.match(
+    /Significant water deficit:\s*([\d.]+)\s*MCM/i
+  );
+
+  if (waterDeficit) {
+    const amount = waterDeficit[1];
+
+    return `નોંધપાત્ર જળ ખાધ: ${amount} MCM`;
+  }
+
+  /* Moderate water deficit */
+  const moderateWaterDeficit = text.match(
+    /Moderate water deficit:\s*([\d.]+)\s*MCM/i
+  );
+
+  if (moderateWaterDeficit) {
+    const amount = moderateWaterDeficit[1];
+
+    return `મધ્યમ જળ ખાધ: ${amount} MCM`;
+  }
+
+  /* Severe water deficit */
+  const severeWaterDeficit = text.match(
+    /Severe water deficit:\s*([\d.]+)\s*MCM/i
+  );
+
+  if (severeWaterDeficit) {
+    const amount = severeWaterDeficit[1];
+
+    return `ગંભીર જળ ખાધ: ${amount} MCM`;
+  }
+
+  /* Generic known static translation */
+  if (T[text]?.gu) {
+    return T[text].gu;
+  }
+
+  return text;
+}
+
+/* ─────────────────────────────────────────────
+   Risk scale
+───────────────────────────────────────────── */
+
+const RISK_SCALE = [
+  {
+    level: 'LOW',
+    range: '0–34',
+    color: '#16a34a',
+    desc: 'Normal water availability, preventive monitoring'
+  },
+  {
+    level: 'MODERATE',
+    range: '35–54',
+    color: '#d97706',
+    desc: 'Below-average conditions, conservation needed'
+  },
+  {
+    level: 'HIGH',
+    range: '55–74',
+    color: '#ea580c',
+    desc: 'Significant stress, active intervention required'
+  },
+  {
+    level: 'SEVERE',
+    range: '75–100',
+    color: '#dc2626',
+    desc: 'Emergency conditions, crisis response activated'
+  }
+];
+
+/* ─────────────────────────────────────────────
+   Component
+───────────────────────────────────────────── */
+
+export default function DroughtIntelligence({
+  selectedVillage,
+  setSelectedVillage,
+  lang
+}: Props) {
+  const [villages, setVillages] = useState<Village[]>([]);
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const t = (key: string) => tr(key, lang);
+
+  /* Load villages */
+  useEffect(() => {
+    getVillages()
+      .then(r => setVillages(r.villages))
+      .catch(() => setVillages([]));
+  }, []);
+
+  /* Load drought data */
+  useEffect(() => {
+    if (!selectedVillage) return;
+
+    setLoading(true);
+
+    getDroughtRisk(selectedVillage)
+      .then(d => {
+        setData(d);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, [selectedVillage]);
+
+  /* Radar data */
+  const radarData = data
+    ? [
+        {
+          subject: t('Rainfall'),
+          value: data.components.rainfall_score,
+          max: 40
+        },
+        {
+          subject: t('Groundwater'),
+          value: data.components.groundwater_score,
+          max: 40
+        },
+        {
+          subject: t('Demand'),
+          value: data.components.demand_score,
+          max: 20
+        }
+      ].map(d => ({
+        ...d,
+        pct: (d.value / d.max) * 100
+      }))
+    : [];
+
+  return (
+    <div>
+      {/* ───────────────── Header ───────────────── */}
+      <div className="page-header">
+        <div>
+          <h1>
+            <Thermometer
+              size={26}
+              style={{
+                display: 'inline',
+                verticalAlign: 'middle',
+                marginRight: 8,
+                color: '#f59e0b'
+              }}
+            />
+
+            {t('Drought Intelligence')}
+          </h1>
+
+          <p className="text-sm text-muted">
+            {t(
+              'Early warning system — risk assessment across multiple factors'
+            )}
+          </p>
+        </div>
+
+        <VillageSelect
+          villages={villages}
+          value={selectedVillage}
+          onChange={setSelectedVillage}
+          width={220}
+        />
+      </div>
+
+      <div className="page-body">
+        {/* ───────────────── Loading ───────────────── */}
+        {loading ? (
+          <div className="loading">
+            <div className="spinner" />
+            {t('Analyzing drought risk...')}
+          </div>
+        ) : (
+          data && (
+            <>
+              {/* ───────────────── Alerts ───────────────── */}
+
+              {data.risk_level === 'SEVERE' && (
+                <div
+                  className="alert alert-emergency"
+                  style={{ marginBottom: 16 }}
+                >
+                  <AlertTriangle
+                    size={18}
+                    style={{
+                      display: 'inline',
+                      verticalAlign: 'middle',
+                      marginRight: 6,
+                      color: '#ef4444'
+                    }}
+                  />
+
+                  <strong>
+                    {t('SEVERE DROUGHT RISK')}
+                  </strong>
+
+                  {' — '}
+
+                  {data.village_name}.{' '}
+
+                  {t(
+                    'Immediate action required to prevent water crisis.'
+                  )}
+                </div>
+              )}
+
+              {data.risk_level === 'HIGH' && (
+                <div
+                  className="alert alert-warning"
+                  style={{ marginBottom: 16 }}
+                >
+                  <AlertTriangle
+                    size={18}
+                    style={{
+                      display: 'inline',
+                      verticalAlign: 'middle',
+                      marginRight: 6,
+                      color: '#f59e0b'
+                    }}
+                  />
+
+                  <strong>
+                    {t('HIGH DROUGHT RISK')}
+                  </strong>
+
+                  {' — '}
+
+                  {data.village_name}.{' '}
+
+                  {t(
+                    'Escalate water conservation efforts now.'
+                  )}
+                </div>
+              )}
+
+              {/* ───────────────── Risk + Radar ───────────────── */}
+
+              <div
+                className="grid grid-2"
+                style={{ marginBottom: 20 }}
+              >
+                {/* Risk gauge */}
+                <div
+                  className="card"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 32
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--text-muted)',
+                      marginBottom: 8,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em'
+                    }}
+                  >
+                    {t('Drought Risk Score')}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: '4rem',
+                      fontWeight: 800,
+                      color: riskColor(data.risk_level),
+                      lineHeight: 1
+                    }}
+                  >
+                    {data.risk_score}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--text-muted)',
+                      margin: '4px 0 16px'
+                    }}
+                  >
+                    {t('out of 100')}
+                  </div>
+
+                  <div
+                    className="progress-bar"
+                    style={{
+                      width: '100%',
+                      height: 12
+                    }}
+                  >
+                    <div
+                      className="progress-fill"
+                      style={{
+                        width: `${data.risk_score}%`,
+                        background: riskColor(data.risk_level)
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: 12 }}>
+                    <span
+                      className={`badge badge-${data.risk_level.toLowerCase()}`}
+                      style={{
+                        fontSize: '0.85rem',
+                        padding: '6px 14px'
+                      }}
+                    >
+                      {translateValue(
+                        data.risk_level,
+                        lang
+                      )}{' '}
+                      {t('DROUGHT RISK')}
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 8,
+                      fontSize: '0.75rem',
+                      color: '#9ca3af'
+                    }}
+                  >
+                    {t('Confidence:')}{' '}
+                    <strong>
+                      {translateValue(
+                        data.confidence,
+                        lang
+                      )}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Radar */}
+                <div className="card">
+                  <div className="card-header">
+                    <div className="card-title">
+                      {t('Risk Factor Breakdown')}
+                    </div>
+                  </div>
+
+                  <ResponsiveContainer
+                    width="100%"
+                    height={200}
+                  >
+                    <RadarChart data={radarData}>
+                      <PolarGrid />
+
+                      <PolarAngleAxis
+                        dataKey="subject"
+                        tick={{ fontSize: 11 }}
+                      />
+
+                      <Radar
+                        dataKey="pct"
+                        stroke={riskColor(
+                          data.risk_level
+                        )}
+                        fill={riskColor(
+                          data.risk_level
+                        )}
+                        fillOpacity={0.3}
+                      />
+
+                      <Tooltip
+                        formatter={(v: any) => [
+                          `${v.toFixed(0)}%`,
+                          t('Risk contribution')
+                        ]}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* ───────────────── Evidence + Actions ───────────────── */}
+
+              <div
+                className="grid grid-2"
+                style={{ marginBottom: 20 }}
+              >
+                {/* Risk Evidence */}
+                <div className="card">
+                  <div className="card-header">
+                    <div className="card-title">
+                      <Search
+                        size={16}
+                        style={{
+                          display: 'inline',
+                          verticalAlign: 'middle',
+                          marginRight: 6,
+                          color: '#3b82f6'
+                        }}
+                      />
+
+                      {t('Risk Evidence')}
+                    </div>
+                  </div>
+
+                  {data.evidence?.map(
+                    (e: string, i: number) => (
+                      <div
+                        key={i}
+                        style={{
+                          padding: '6px 0',
+                          borderBottom:
+                            '1px solid var(--border-glass)',
+                          fontSize: '0.85rem',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <ChevronRight
+                          size={14}
+                          style={{
+                            display: 'inline',
+                            verticalAlign: 'middle',
+                            marginRight: 4,
+                            color: riskColor(
+                              data.risk_level
+                            ),
+                            flexShrink: 0
+                          }}
+                        />
+
+                        <span>
+                          {translateEvidence(e, lang)}
+                        </span>
+                      </div>
+                    )
+                  )}
+                </div>
+
+                {/* Recommended Actions */}
+                <div className="card">
+                  <div className="card-header">
+                    <div className="card-title">
+                      <Zap
+                        size={16}
+                        style={{
+                          display: 'inline',
+                          verticalAlign: 'middle',
+                          marginRight: 6,
+                          color: '#eab308'
+                        }}
+                      />
+
+                      {t('Recommended Actions')}
+                    </div>
+                  </div>
+
+                  {data.recommended_actions
+                    ?.slice(0, 5)
+                    .map(
+                      (a: string, i: number) => (
+                        <div
+                          key={i}
+                          style={{
+                            padding: '6px 0',
+                            borderBottom:
+                              '1px solid var(--border-glass)',
+                            fontSize: '0.85rem',
+                            display: 'flex',
+                            gap: 8
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: '#3b82f6',
+                              fontWeight: 700,
+                              minWidth: 20
+                            }}
+                          >
+                            {i + 1}.
+                          </span>
+
+                          <span>
+                            {t(a)}
+                          </span>
+                        </div>
+                      )
+                    )}
+                </div>
+              </div>
+
+              {/* ───────────────── Risk Scale ───────────────── */}
+
+              <div className="card">
+                <div className="card-header">
+                  <div className="card-title">
+                    {t(
+                      'Drought Risk Scale Reference'
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-4">
+                  {RISK_SCALE.map(
+                    ({
+                      level,
+                      range,
+                      color,
+                      desc
+                    }) => (
+                      <div
+                        key={level}
+                        style={{
+                          padding: 12,
+                          background:
+                            'rgba(255,255,255,0.05)',
+                          borderRadius: 8,
+                          borderLeft: `3px solid ${color}`
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            color,
+                            fontSize: '0.85rem'
+                          }}
+                        >
+                          {translateValue(
+                            level,
+                            lang
+                          )}
+                        </div>
+
+                        <div
+                          style={{
+                            fontSize: '0.75rem',
+                            color: 'var(--text-muted)'
+                          }}
+                        >
+                          {t('Score:')} {range}
+                        </div>
+
+                        <div
+                          style={{
+                            fontSize: '0.75rem',
+                            color: 'var(--text-main)',
+                            marginTop: 4
+                          }}
+                        >
+                          {t(desc)}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            </>
+          )
+        )}
+      </div>
+    </div>
+  );
+}

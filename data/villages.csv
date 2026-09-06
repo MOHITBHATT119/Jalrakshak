@@ -1,0 +1,11 @@
+village_id,name,district,lat,lon,population,agricultural_area_ha,primary_crops,annual_rainfall_mm,groundwater_depth_m,aquifer_type
+V001,Rajkot,Rajkot,22.3039,70.8022,1500000,45000,Cotton;Groundnut;Wheat,650,18.5,alluvial
+V002,Junagadh,Junagadh,21.5222,70.4579,320000,38000,Groundnut;Cotton;Millet,750,14.2,alluvial
+V003,Amreli,Amreli,21.6009,71.2214,58000,42000,Groundnut;Cotton;Castor,600,22.1,hard_rock
+V004,Bhavnagar,Bhavnagar,21.7645,72.1519,593000,35000,Wheat;Cotton;Sesame,550,25.3,alluvial
+V005,Jamnagar,Jamnagar,22.4707,70.0577,479000,40000,Groundnut;Cotton;Vegetables,680,16.8,alluvial
+V006,Porbandar,Porbandar,21.6425,69.6293,133000,18000,Groundnut;Millet;Vegetables,720,12.5,coastal
+V007,Surendranagar,Surendranagar,22.7277,71.6522,180000,55000,Cotton;Wheat;Castor,450,28.7,hard_rock
+V008,Morbi,Morbi,22.8171,70.8378,196000,32000,Cotton;Groundnut;Wheat,500,24.2,alluvial
+V009,Gir Somnath,Gir Somnath,20.9060,70.3707,120000,28000,Groundnut;Mango;Cotton,780,11.3,hard_rock
+V010,Devbhumi Dwarka,Devbhumi Dwarka,22.2393,68.9687,45000,22000,Groundnut;Cotton;Millet,600,19.8,coastal

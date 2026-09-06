@@ -1,0 +1,21 @@
+crop_id,name,water_requirement_mm,season,duration_days,drought_tolerance,suitability_saurashtra,water_saving_vs_cotton_pct,notes
+C001,Cotton,900,kharif,180,low,moderate,0,High water crop - primary cash crop
+C002,Groundnut,500,kharif,120,moderate,high,44,Major oilseed - moderate water
+C003,Bajra (Pearl Millet),350,kharif,90,high,very_high,61,Drought tolerant staple
+C004,Jowar (Sorghum),400,kharif,110,high,very_high,56,Excellent drought tolerance
+C005,Moth Bean,250,kharif,75,very_high,high,72,Extremely drought tolerant legume
+C006,Cluster Bean (Guar),300,kharif,90,high,high,67,Good drought tolerance
+C007,Castor,450,kharif,180,high,high,50,Drought tolerant oilseed
+C008,Sesame,350,kharif,90,high,high,61,Low water requirement
+C009,Cumin,200,rabi,100,moderate,high,78,Very low water requirement
+C010,Mustard,300,rabi,110,moderate,moderate,67,Winter oilseed crop
+C011,Wheat,450,rabi,120,low,moderate,50,Moderate water winter crop
+C012,Chickpea (Chana),350,rabi,100,moderate,high,61,Good protein crop, moderate water
+C013,Lentil (Masoor),300,rabi,100,moderate,moderate,67,Winter pulse crop
+C014,Green Gram (Moong),250,kharif,65,high,high,72,Short duration, water efficient
+C015,Aloe Vera,200,annual,365,very_high,very_high,78,Excellent water efficiency medicinal crop
+C016,Dragon Fruit,350,annual,365,high,high,61,Premium high-value drought tolerant
+C017,Pomegranate,600,annual,365,high,high,33,High value perennial fruit
+C018,Ber (Indian Jujube),400,annual,365,very_high,very_high,56,Very drought tolerant native fruit
+C019,Mango,800,annual,365,moderate,moderate,11,High value but water intensive
+C020,Banana,1200,annual,365,low,low,-33,Very high water - avoid in drought
