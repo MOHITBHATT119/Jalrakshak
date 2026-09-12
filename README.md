@@ -512,20 +512,3 @@ Government water-resource authorities
 **Database:** SQLite
 
 ------------------------------------------------------------------------
-
-## Core Innovation
-
-> **From Water Data to Intelligent Water Action.**
-
-------------------------------------------------------------------------
-
-## Disclaimer
-
-This project is a prototype developed for demonstration and
-educational/hackathon purposes. Recommendations are preliminary and
-should be validated using official datasets, field measurements and
-qualified domain experts before real-world implementation.
-
-------------------------------------------------------------------------
-
-**Built for IBM Workshop --- JalRakshak AI**
