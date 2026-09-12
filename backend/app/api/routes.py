@@ -1,7 +1,9 @@
 """API Routes for JalRakshak AI 2.0"""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional, List
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.core.config import settings
 from app.services.data_service import (
     get_all_villages, get_village,
@@ -19,8 +21,16 @@ from app.agents.orchestrator import (
     run_full_village_analysis, get_trace,
     run_copilot, generate_action_plan, generate_report
 )
+from app.schemas.responses import (
+    HealthResponse, VillageListResponse, GroundwaterResponse,
+    DroughtRiskResponse, WaterHealthResponse, WaterBudgetResponse,
+    CopilotResponse, ActionPlanResponse, ReportResponse,
+)
 
 router = APIRouter()
+
+# Module-level limiter for LLM endpoints (10 req/min per IP)
+limiter = Limiter(key_func=get_remote_address)
 
 
 # ---- Pydantic models ----
@@ -56,7 +66,7 @@ class ReportRequest(BaseModel):
 
 # ---- Health ----
 
-@router.get("/health")
+@router.get("/health", response_model=HealthResponse)
 async def health():
     from app.services.database import get_table_stats
     stats = get_table_stats()
@@ -78,7 +88,7 @@ async def health():
 
 # ---- Villages ----
 
-@router.get("/villages")
+@router.get("/villages", response_model=VillageListResponse)
 async def list_villages():
     villages = get_all_villages()
     return {"villages": villages, "count": len(villages)}
@@ -92,7 +102,7 @@ async def get_village_detail(village_id: str):
     return v
 
 
-@router.get("/villages/{village_id}/groundwater")
+@router.get("/villages/{village_id}/groundwater", response_model=GroundwaterResponse)
 async def get_groundwater(village_id: str):
     v = get_village(village_id)
     if not v:
@@ -106,7 +116,7 @@ async def get_rainfall(village_id: str):
     return {"village_id": village_id, "rainfall": data, "count": len(data)}
 
 
-@router.get("/villages/{village_id}/risk")
+@router.get("/villages/{village_id}/risk", response_model=DroughtRiskResponse)
 async def get_drought_risk(village_id: str):
     v = get_village(village_id)
     if not v:
@@ -114,7 +124,7 @@ async def get_drought_risk(village_id: str):
     return assess_drought_risk(village_id)
 
 
-@router.get("/villages/{village_id}/water-health")
+@router.get("/villages/{village_id}/water-health", response_model=WaterHealthResponse)
 async def get_water_health(village_id: str):
     v = get_village(village_id)
     if not v:
@@ -122,7 +132,7 @@ async def get_water_health(village_id: str):
     return calculate_water_health_score(village_id)
 
 
-@router.get("/villages/{village_id}/water-budget")
+@router.get("/villages/{village_id}/water-budget", response_model=WaterBudgetResponse)
 async def get_water_budget(village_id: str):
     v = get_village(village_id)
     if not v:
@@ -185,22 +195,25 @@ async def post_scenario(req: ScenarioRequest):
 
 # ---- Water Copilot ----
 
-@router.post("/copilot")
-async def post_copilot(req: CopilotRequest):
+@router.post("/copilot", response_model=CopilotResponse)
+@limiter.limit("10/minute")
+async def post_copilot(request: Request, req: CopilotRequest):
     return run_copilot(req.message, req.village_id, req.history, req.lang or "en")
 
 
 # ---- Action Plan ----
 
-@router.post("/action-plan")
-async def post_action_plan(req: ReportRequest):
+@router.post("/action-plan", response_model=ActionPlanResponse)
+@limiter.limit("10/minute")
+async def post_action_plan(request: Request, req: ReportRequest):
     return generate_action_plan(req.village_id)
 
 
 # ---- Reports ----
 
-@router.post("/reports")
-async def post_report(req: ReportRequest):
+@router.post("/reports", response_model=ReportResponse)
+@limiter.limit("10/minute")
+async def post_report(request: Request, req: ReportRequest):
     v = get_village(req.village_id)
     if not v:
         raise HTTPException(status_code=404, detail=f"Village {req.village_id} not found")

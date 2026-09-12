@@ -2,7 +2,7 @@
 Water-Efficient Crop Advisory Agent
 Recommends water-efficient crops based on water availability and season.
 """
-from app.services.data_service import get_crops_data, get_village
+from app.services.data_service import get_crops_data, get_village, get_data_note, safe_int
 from app.agents.drought_agent import assess_drought_risk
 
 
@@ -22,7 +22,7 @@ def get_crop_advice(village_id: str, season: str = "kharif", include_rabi: bool 
         crop_season = crop.get("season", "kharif")
         suitability = crop.get("suitability_saurashtra", "moderate")
         drought_tol = crop.get("drought_tolerance", "moderate")
-        water_req = int(crop.get("water_requirement_mm", 500))
+        water_req = safe_int(crop.get("water_requirement_mm"), 500)
 
         # Score each crop
         score = 0
@@ -49,7 +49,7 @@ def get_crop_advice(village_id: str, season: str = "kharif", include_rabi: bool 
             if water_req > 800:
                 score -= 20
 
-        water_saving = int(crop.get("water_saving_vs_cotton_pct", 0))
+        water_saving = safe_int(crop.get("water_saving_vs_cotton_pct"), 0)
 
         suitable_crops.append({
             "crop_id": crop["crop_id"],
@@ -83,15 +83,15 @@ def get_crop_advice(village_id: str, season: str = "kharif", include_rabi: bool 
         },
         "water_saving_tips": general_tips,
         "disclaimer": "AI-assisted recommendation. Local agricultural validation recommended.",
-        "data_note": "Synthetic demonstration data. Not official government measurements.",
+        "data_note": get_data_note(village_id),
     }
 
 
 def _get_crop_reason(crop: dict, risk_level: str) -> str:
     name = crop["name"]
     drought_tol = crop.get("drought_tolerance", "moderate")
-    water_req = int(crop.get("water_requirement_mm", 500))
-    saving = int(crop.get("water_saving_vs_cotton_pct", 0))
+    water_req = safe_int(crop.get("water_requirement_mm"), 500)
+    saving = safe_int(crop.get("water_saving_vs_cotton_pct"), 0)
 
     if drought_tol in ["very_high", "high"] and water_req < 400:
         return f"{name} is highly drought-tolerant requiring only {water_req}mm water, saving ~{saving}% vs cotton"

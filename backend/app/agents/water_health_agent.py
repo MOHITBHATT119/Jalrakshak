@@ -5,7 +5,10 @@ All calculations are deterministic - no LLM for numbers.
 """
 from app.agents.groundwater_agent import analyze_groundwater
 from app.agents.drought_agent import assess_drought_risk
-from app.services.data_service import get_village, get_water_demand_data, get_recharge_data
+from app.services.data_service import (
+    get_village, get_water_demand_data, get_recharge_data, get_data_note,
+    safe_int, safe_float
+)
 
 
 def calculate_water_health_score(village_id: str) -> dict:
@@ -75,7 +78,7 @@ def calculate_water_health_score(village_id: str) -> dict:
         "explanation_factors": explanation_factors,
         "drought_risk_level": drought_result.get("risk_level", "UNKNOWN"),
         "groundwater_trend": gw_result.get("trend", "UNKNOWN"),
-        "data_note": "Synthetic demonstration data. Not official government measurements.",
+        "data_note": get_data_note(village_id),
     }
 
 
@@ -88,11 +91,12 @@ def _groundwater_sub_score(gw: dict) -> float:
 
 
 def _rainfall_sub_score(drought: dict, village: dict) -> float:
-    rf_comp = drought.get("components", {}).get("rainfall_score", 15)
+    comps = drought.get("components") or {}
+    rf_comp = safe_float(comps.get("rainfall_score"), 15.0)
     # rainfall_score in drought is 0-40 where 40=worst
     # Invert: healthy = high score
-    inv = 40 - rf_comp
-    return max(0, min(20, inv * 0.5))
+    inv = 40.0 - rf_comp
+    return max(0.0, min(20.0, inv * 0.5))
 
 
 def _drought_sub_score(drought: dict) -> float:
@@ -103,8 +107,8 @@ def _drought_sub_score(drought: dict) -> float:
 def _demand_sub_score(demand_data: list) -> float:
     if not demand_data:
         return 12  # neutral if no data
-    recent = sorted(demand_data, key=lambda x: int(x["year"]))[-1]
-    deficit = float(recent.get("deficit_mcm", 0))
+    recent = sorted(demand_data, key=lambda x: safe_int(x.get("year")))[-1]
+    deficit = safe_float(recent.get("deficit_mcm"), 0.0)
     if deficit > 20:
         return 18
     elif deficit >= -10:

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   CheckCircle2, XCircle, FlaskConical, Eye, Search, Filter,
   ClipboardList, ChevronDown, X, AlertCircle, CheckCircle,
@@ -292,6 +293,7 @@ function EvidenceBlock({ label, text }: { label: string; text: string }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Approvals() {
+  const { t } = useLanguage();
   const nav = useNavigate();
 
   const [recs, setRecs]       = useState<Recommendation[]>(loadRecs);
@@ -320,7 +322,7 @@ export default function Approvals() {
   const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
-    getVillages().then(d => setVillages(d.villages)).catch(() => {});
+    getVillages().then(d => setVillages(Array.isArray(d?.villages) ? d.villages : [])).catch(() => {});
     getHealth().then(h => setIsDemo(h.demo_mode)).catch(() => {});
   }, []);
 
@@ -661,7 +663,7 @@ export default function Approvals() {
             <CheckCircle2 size={20} color="#22c55e" />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800 }}>AI Recommendation Approvals</h1>
+            <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800 }}>{t('aiRecommendations')}</h1>
             <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '0.83rem' }}>
               Review, validate and approve AI-generated water interventions.
               {isDemo && <span style={{ marginLeft: 8, fontSize: '0.72rem', padding: '2px 8px', borderRadius: 20, fontWeight: 800, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b' }}>Demo Mode</span>}
@@ -676,10 +678,10 @@ export default function Approvals() {
       {/* ── KPI CARDS ──────────────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 20 }}>
         {([
-          { label: 'Pending',         val: counts.PENDING,          color: '#3b82f6',  status: 'PENDING'          as ApprovalStatus },
-          { label: 'Approved',        val: counts.APPROVED,         color: '#22c55e',  status: 'APPROVED'         as ApprovalStatus },
-          { label: 'Rejected',        val: counts.REJECTED,         color: '#ef4444',  status: 'REJECTED'         as ApprovalStatus },
-          { label: 'Technical Review',val: counts.TECHNICAL_REVIEW, color: '#f59e0b',  status: 'TECHNICAL_REVIEW' as ApprovalStatus },
+          { label: t('pending'),         val: counts.PENDING,          color: '#3b82f6',  status: 'PENDING'          as ApprovalStatus },
+          { label: t('approved'),        val: counts.APPROVED,         color: '#22c55e',  status: 'APPROVED'         as ApprovalStatus },
+          { label: t('rejected'),        val: counts.REJECTED,         color: '#ef4444',  status: 'REJECTED'         as ApprovalStatus },
+          { label: 'Technical Review',   val: counts.TECHNICAL_REVIEW, color: '#f59e0b',  status: 'TECHNICAL_REVIEW' as ApprovalStatus },
         ] as { label: string; val: number; color: string; status: ApprovalStatus }[]).map(k => (
           <div key={k.label}
             onClick={() => setFilterStatus(filterStatus === k.status ? 'ALL' : k.status)}

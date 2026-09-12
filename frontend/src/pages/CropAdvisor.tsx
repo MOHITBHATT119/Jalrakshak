@@ -328,7 +328,7 @@ export default function CropAdvisor({ selectedVillage, setSelectedVillage, lang,
   const [selected, setSelected] = useState<CropRecommendation | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
 
-  useEffect(() => { getVillages().then(r => setVillages(r.villages)); }, []);
+  useEffect(() => { getVillages().then(r => setVillages(Array.isArray(r?.villages) ? r.villages : [])).catch(() => {}); }, []);
 
   useEffect(() => {
     if (!selectedVillage) return;

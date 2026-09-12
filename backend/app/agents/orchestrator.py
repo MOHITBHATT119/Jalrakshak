@@ -3,7 +3,7 @@ Agent Orchestrator
 Routes requests to appropriate specialized agents and aggregates results.
 """
 import uuid
-import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from app.agents.groundwater_agent import analyze_groundwater
 from app.agents.drought_agent import assess_drought_risk
@@ -28,7 +28,7 @@ def run_full_village_analysis(village_id: str) -> dict:
     trace_steps = []
 
     def run_agent(name, fn, *args, **kwargs):
-        start = datetime.datetime.utcnow()
+        start = datetime.now(timezone.utc)
         try:
             result = fn(*args, **kwargs)
             status = "SUCCESS"
@@ -37,7 +37,7 @@ def run_full_village_analysis(village_id: str) -> dict:
             result = {}
             status = "ERROR"
             error = str(e)
-        elapsed = (datetime.datetime.utcnow() - start).total_seconds()
+        elapsed = (datetime.now(timezone.utc) - start).total_seconds()
         trace_steps.append({
             "agent": name,
             "status": status,
@@ -79,7 +79,7 @@ def run_full_village_analysis(village_id: str) -> dict:
     trace = {
         "trace_id": trace_id,
         "village_id": village_id,
-        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "steps": trace_steps,
         "demo_mode": demo_mode,
     }

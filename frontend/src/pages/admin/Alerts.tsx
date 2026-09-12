@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   Bell, ArrowLeft, CheckCircle, ClipboardList, UserCheck,
   BrainCircuit, XCircle, Eye, TrendingDown, CloudRain,
@@ -214,6 +215,7 @@ function SevBadge({ severity }: { severity: string }) {
 
 function AlertDetail({ alert, onBack }: { alert: Alert; onBack: () => void }) {
   const nav = useNavigate();
+  const { t } = useLanguage();
   const [status, setStatus] = useState<string | null>(null);
 
   const col = SEV_COLOR[alert.severity];
@@ -254,7 +256,7 @@ function AlertDetail({ alert, onBack }: { alert: Alert; onBack: () => void }) {
     <div>
       {/* Back */}
       <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', marginBottom: '18px', fontSize: '0.9rem', padding: 0 }}>
-        <ArrowLeft size={16} /> Back to Alerts
+        <ArrowLeft size={16} /> {t('backToAlerts')}
       </button>
 
       {/* Header card */}
@@ -391,6 +393,7 @@ function AlertDetail({ alert, onBack }: { alert: Alert; onBack: () => void }) {
 // ─── Alert List ───────────────────────────────────────────────────────────
 
 function AlertList({ onSelect }: { onSelect: (a: Alert) => void }) {
+  const { t } = useLanguage();
   const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'HIGH' | 'MEDIUM'>('ALL');
 
   const visible = ALERTS.filter(a => filter === 'ALL' || a.severity === filter);
@@ -418,15 +421,15 @@ function AlertList({ onSelect }: { onSelect: (a: Alert) => void }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <h2 style={{ margin: '0 0 3px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Bell size={20} color="#ef4444" /> AI Alerts
+            <Bell size={20} color="#ef4444" /> {t('alerts')}
           </h2>
           <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.88rem' }}>{ALERTS.filter(a => a.severity === 'CRITICAL').length} critical · {ALERTS.length} total active</p>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {filterBtn('All', 'ALL')}
-          {filterBtn('Critical', 'CRITICAL', '#ef4444')}
-          {filterBtn('High', 'HIGH', '#f59e0b')}
-          {filterBtn('Medium', 'MEDIUM', '#eab308')}
+          {filterBtn(t('all'), 'ALL')}
+          {filterBtn(t('critical'), 'CRITICAL', '#ef4444')}
+          {filterBtn(t('high'), 'HIGH', '#f59e0b')}
+          {filterBtn(t('medium'), 'MEDIUM', '#eab308')}
         </div>
       </div>
 

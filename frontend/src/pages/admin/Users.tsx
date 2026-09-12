@@ -1,13 +1,18 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Users as UsersIcon, UserPlus, Search, RefreshCw, Eye, Pencil,
   Trash2, X, AlertCircle, CheckCircle2, ShieldCheck, ShieldOff,
   UserCheck, UserX, Database, Leaf, Users2,
-  Crown, ClipboardList, MoreVertical,
+  Crown, ClipboardList, MoreVertical, Sprout, Trees, Ban,
 } from 'lucide-react';
 
 // ─── LocalStorage key ─────────────────────────────────────────────────────────
 const LS_KEY = 'jalrakshak_users_v1';
+
+declare const __API_BASE__: string;
+const _API_BASE = (typeof __API_BASE__ !== 'undefined' && __API_BASE__)
+  ? `${__API_BASE__}/api/v1`
+  : '/api/v1';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export type Role = 'Water Administrator' | 'Community' | 'Farmer' | 'Evaluator';
@@ -26,19 +31,21 @@ export interface UserRecord {
   isDemo: boolean;
   phone?: string;
   notes?: string;
+  land_area_ha?: number;
+  primary_crops?: string;
 }
 
 // ─── Demo seed data ───────────────────────────────────────────────────────────
 const SEED_USERS: UserRecord[] = [
   { id: 'U001', name: 'Arjun Patel',      email: 'arjun.patel@jalrakshak.gov',     role: 'Water Administrator', village: 'Rajkot',        district: 'Rajkot',          status: 'Active',    lastActive: '2025-01-15', createdAt: '2024-03-01', isDemo: true, phone: '+91 98250 11001' },
   { id: 'U002', name: 'Meena Sharma',     email: 'meena.sharma@village.in',        role: 'Community',           village: 'Junagadh',      district: 'Junagadh',        status: 'Active',    lastActive: '2025-01-14', createdAt: '2024-04-10', isDemo: true, phone: '+91 98250 11002' },
-  { id: 'U003', name: 'Ravi Desai',       email: 'ravi.desai@khet.in',             role: 'Farmer',              village: 'Amreli',        district: 'Amreli',          status: 'Active',    lastActive: '2025-01-12', createdAt: '2024-05-22', isDemo: true, phone: '+91 98250 11003' },
+  { id: 'U003', name: 'Ravi Desai',       email: 'ravi.desai@khet.in',             role: 'Farmer',              village: 'Amreli',        district: 'Amreli',          status: 'Active',    lastActive: '2025-01-12', createdAt: '2024-05-22', isDemo: true, phone: '+91 98250 11003', land_area_ha: 4.5, primary_crops: 'Cotton, Groundnut' },
   { id: 'U004', name: 'Priya Nair',       email: 'priya.nair@eval.org',            role: 'Evaluator',           village: 'Bhavnagar',     district: 'Bhavnagar',       status: 'Active',    lastActive: '2025-01-10', createdAt: '2024-06-01', isDemo: true, phone: '+91 98250 11004' },
   { id: 'U005', name: 'Suresh Kulkarni',  email: 'suresh.k@jalrakshak.gov',        role: 'Water Administrator', village: 'Jamnagar',      district: 'Jamnagar',        status: 'Active',    lastActive: '2025-01-13', createdAt: '2024-03-15', isDemo: true, phone: '+91 98250 11005' },
   { id: 'U006', name: 'Kavita Mehta',     email: 'kavita.mehta@village.in',        role: 'Community',           village: 'Porbandar',     district: 'Porbandar',       status: 'Inactive',  lastActive: '2024-12-20', createdAt: '2024-07-01', isDemo: true, phone: '+91 98250 11006' },
-  { id: 'U007', name: 'Bhavesh Joshi',    email: 'bhavesh.joshi@khet.in',          role: 'Farmer',              village: 'Surendranagar', district: 'Surendranagar',   status: 'Active',    lastActive: '2025-01-11', createdAt: '2024-08-05', isDemo: true, phone: '+91 98250 11007' },
+  { id: 'U007', name: 'Bhavesh Joshi',    email: 'bhavesh.joshi@khet.in',          role: 'Farmer',              village: 'Surendranagar', district: 'Surendranagar',   status: 'Active',    lastActive: '2025-01-11', createdAt: '2024-08-05', isDemo: true, phone: '+91 98250 11007', land_area_ha: 6.0, primary_crops: 'Groundnut, Wheat' },
   { id: 'U008', name: 'Neha Yadav',       email: 'neha.yadav@community.in',        role: 'Community',           village: 'Morbi',         district: 'Morbi',           status: 'Active',    lastActive: '2025-01-09', createdAt: '2024-09-10', isDemo: true, phone: '+91 98250 11008' },
-  { id: 'U009', name: 'Dinesh Rathod',    email: 'dinesh.rathod@khet.in',          role: 'Farmer',              village: 'Gir Somnath',   district: 'Gir Somnath',     status: 'Suspended', lastActive: '2024-11-30', createdAt: '2024-10-01', isDemo: true, phone: '+91 98250 11009' },
+  { id: 'U009', name: 'Dinesh Rathod',    email: 'dinesh.rathod@khet.in',          role: 'Farmer',              village: 'Gir Somnath',   district: 'Gir Somnath',     status: 'Suspended', lastActive: '2024-11-30', createdAt: '2024-10-01', isDemo: true, phone: '+91 98250 11009', land_area_ha: 3.2, primary_crops: 'Wheat, Cumin' },
   { id: 'U010', name: 'Ankita Singh',     email: 'ankita.singh@eval.org',          role: 'Evaluator',           village: 'Devbhumi Dwarka', district: 'Devbhumi Dwarka', status: 'Active',  lastActive: '2025-01-08', createdAt: '2024-11-01', isDemo: true, phone: '+91 98250 11010' },
   { id: 'U011', name: 'Raj Solanki',      email: 'raj.solanki@jalrakshak.gov',     role: 'Water Administrator', village: 'Ahmedabad',     district: 'Ahmedabad',       status: 'Active',    lastActive: '2025-01-15', createdAt: '2024-02-01', isDemo: true, phone: '+91 98250 11011' },
   { id: 'U012', name: 'Geeta Prajapati',  email: 'geeta.prajapati@village.in',     role: 'Community',           village: 'Gandhinagar',   district: 'Gandhinagar',     status: 'Inactive',  lastActive: '2024-10-05', createdAt: '2024-12-01', isDemo: true, phone: '+91 98250 11012' },
@@ -142,7 +149,7 @@ function labelS(): React.CSSProperties {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function RoleBadge({ role }: { role: Role }) {
-  const m = ROLE_META[role];
+  const m = ROLE_META[role] || ROLE_META['Farmer'];
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 20, fontSize: '0.68rem', fontWeight: 800, color: m.color, background: m.bg, border: `1px solid ${m.color}33`, whiteSpace: 'nowrap' }}>
       {m.icon}{role}
@@ -197,19 +204,74 @@ export default function Users() {
   const [viewUser, setViewUser] = useState<UserRecord | null>(null);
   const [editUser, setEditUser] = useState<UserRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserRecord | null>(null);
-  const [actionMenu, setActionMenu] = useState<string | null>(null); // user id
+  const [actionMenu, setActionMenu] = useState<string | null>(null);
   const [showRoles, setShowRoles] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Add/edit form
-  const BLANK = { name: '', email: '', role: 'Farmer' as Role, village: '', district: '', status: 'Active' as UserStatus, phone: '', notes: '' };
+  const BLANK = {
+    name: '',
+    email: '',
+    role: 'Farmer' as Role,
+    village: '',
+    district: 'Amreli',
+    status: 'Active' as UserStatus,
+    phone: '',
+    notes: '',
+    land_area_ha: 3.5,
+    primary_crops: 'Cotton, Groundnut',
+  };
   const [form, setForm] = useState({ ...BLANK });
   const [formErrs, setFormErrs] = useState<Record<string, string>>({});
 
-  // Load from localStorage (or seeds)
-  useEffect(() => { setUsers(loadUsers()); }, []);
+  // ── Sync with backend API ─────────────────────────────────────────────────
+  const fetchUsers = useCallback(async () => {
+    setIsSyncing(true);
+    const token = sessionStorage.getItem('jalrakshak_admin_token');
+    try {
+      const res = await fetch(`${_API_BASE}/admin/users`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.users)) {
+          const mapped: UserRecord[] = data.users.map((u: any) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email || '',
+            phone: u.phone || '',
+            role: u.role as Role,
+            village: u.village || '',
+            district: u.district || '',
+            status: u.status as UserStatus,
+            lastActive: u.last_active ? u.last_active.slice(0, 10) : new Date().toISOString().slice(0, 10),
+            createdAt: u.created_at ? u.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
+            isDemo: Boolean(u.is_demo),
+            notes: u.notes || '',
+            land_area_ha: Number(u.land_area_ha || 0),
+            primary_crops: u.primary_crops || '',
+          }));
+          setUsers(mapped);
+          saveUsers(mapped);
+          setIsSyncing(false);
+          return;
+        }
+      }
+    } catch {
+      // offline
+    }
+    setUsers(loadUsers());
+    setIsSyncing(false);
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   // Persist whenever users change
-  useEffect(() => { if (users.length) saveUsers(users); }, [users]);
+  useEffect(() => {
+    if (users.length) saveUsers(users);
+  }, [users]);
 
   // Dismiss action menu on outside click
   useEffect(() => {
@@ -220,13 +282,18 @@ export default function Users() {
   }, [actionMenu]);
 
   // ── KPIs ──────────────────────────────────────────────────────────────────
-  const kpis = useMemo(() => ({
-    total:     users.length,
-    active:    users.filter(u => u.status === 'Active').length,
-    farmers:   users.filter(u => u.role === 'Farmer').length,
-    community: users.filter(u => u.role === 'Community').length,
-    admins:    users.filter(u => u.role === 'Water Administrator').length,
-  }), [users]);
+  const kpis = useMemo(() => {
+    const farmers = users.filter(u => u.role === 'Farmer');
+    const totalLand = farmers.reduce((sum, f) => sum + (f.land_area_ha || 0), 0);
+    return {
+      total:     users.length,
+      active:    users.filter(u => u.status === 'Active').length,
+      farmers:   farmers.length,
+      totalLand: totalLand.toFixed(1),
+      community: users.filter(u => u.role === 'Community').length,
+      admins:    users.filter(u => u.role === 'Water Administrator').length,
+    };
+  }, [users]);
 
   // ── Filtered list ─────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -249,24 +316,65 @@ export default function Users() {
   function validateForm(f: typeof form) {
     const e: Record<string, string> = {};
     if (!f.name.trim())  e.name  = 'Name is required';
-    if (!f.email.trim()) e.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) e.email = 'Invalid email address';
+    if (!f.email.trim() && !f.phone.trim()) e.email = 'Email or phone number is required';
+    if (f.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) e.email = 'Invalid email address';
     if (!f.village.trim()) e.village = 'Village/location is required';
     if (!f.district)    e.district = 'District is required';
     return e;
   }
 
   // ── Add user ──────────────────────────────────────────────────────────────
-  function handleAdd() {
+  async function handleAdd() {
     const errs = validateForm(form);
     if (Object.keys(errs).length) { setFormErrs(errs); return; }
     const now = new Date().toISOString().slice(0, 10);
+    const tempId = genId(users);
     const nu: UserRecord = {
-      id: genId(users), name: form.name.trim(), email: form.email.trim(),
-      role: form.role, village: form.village.trim(), district: form.district,
-      status: form.status, lastActive: now, createdAt: now, isDemo: false,
-      phone: form.phone.trim() || undefined, notes: form.notes.trim() || undefined,
+      id: tempId,
+      name: form.name.trim(),
+      email: form.email.trim(),
+      role: form.role,
+      village: form.village.trim(),
+      district: form.district,
+      status: form.status,
+      lastActive: now,
+      createdAt: now,
+      isDemo: false,
+      phone: form.phone.trim() || undefined,
+      notes: form.notes.trim() || undefined,
+      land_area_ha: Number(form.land_area_ha) || 0,
+      primary_crops: form.primary_crops || '',
     };
+
+    const token = sessionStorage.getItem('jalrakshak_admin_token');
+    try {
+      const res = await fetch(`${_API_BASE}/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim() || undefined,
+          phone: form.phone.trim() || undefined,
+          role: form.role,
+          village: form.village.trim(),
+          district: form.district,
+          land_area_ha: Number(form.land_area_ha) || 0,
+          primary_crops: form.primary_crops || '',
+          status: form.status,
+          notes: form.notes.trim() || undefined,
+        }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        nu.id = created.id;
+      }
+    } catch {
+      // offline fallback
+    }
+
     setUsers(prev => [nu, ...prev]);
     setShowAdd(false);
     setForm({ ...BLANK });
@@ -275,16 +383,66 @@ export default function Users() {
 
   // ── Edit user ─────────────────────────────────────────────────────────────
   function openEdit(u: UserRecord) {
-    setForm({ name: u.name, email: u.email, role: u.role, village: u.village, district: u.district, status: u.status, phone: u.phone ?? '', notes: u.notes ?? '' });
+    setForm({
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      village: u.village,
+      district: u.district,
+      status: u.status,
+      phone: u.phone ?? '',
+      notes: u.notes ?? '',
+      land_area_ha: u.land_area_ha || 3.5,
+      primary_crops: u.primary_crops || 'Cotton, Groundnut',
+    });
     setFormErrs({});
     setEditUser(u);
   }
-  function handleEditSave() {
+
+  async function handleEditSave() {
     if (!editUser) return;
     const errs = validateForm(form);
     if (Object.keys(errs).length) { setFormErrs(errs); return; }
+
+    const token = sessionStorage.getItem('jalrakshak_admin_token');
+    try {
+      await fetch(`${_API_BASE}/admin/users/${editUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim() || undefined,
+          phone: form.phone.trim() || undefined,
+          role: form.role,
+          village: form.village.trim(),
+          district: form.district,
+          land_area_ha: Number(form.land_area_ha) || 0,
+          primary_crops: form.primary_crops || '',
+          status: form.status,
+          notes: form.notes.trim() || undefined,
+        }),
+      });
+    } catch {
+      // offline fallback
+    }
+
     setUsers(prev => prev.map(u => u.id === editUser.id
-      ? { ...u, name: form.name.trim(), email: form.email.trim(), role: form.role, village: form.village.trim(), district: form.district, status: form.status, phone: form.phone.trim() || undefined, notes: form.notes.trim() || undefined }
+      ? {
+          ...u,
+          name: form.name.trim(),
+          email: form.email.trim(),
+          role: form.role,
+          village: form.village.trim(),
+          district: form.district,
+          status: form.status,
+          phone: form.phone.trim() || undefined,
+          notes: form.notes.trim() || undefined,
+          land_area_ha: Number(form.land_area_ha) || 0,
+          primary_crops: form.primary_crops || '',
+        }
       : u));
     setEditUser(null);
     setForm({ ...BLANK });
@@ -292,8 +450,21 @@ export default function Users() {
   }
 
   // ── Toggle status ─────────────────────────────────────────────────────────
-  function toggleStatus(u: UserRecord) {
-    const next: UserStatus = u.status === 'Active' ? 'Inactive' : 'Active';
+  async function toggleStatus(u: UserRecord, forcedStatus?: UserStatus) {
+    const next: UserStatus = forcedStatus || (u.status === 'Active' ? 'Suspended' : 'Active');
+    const token = sessionStorage.getItem('jalrakshak_admin_token');
+    try {
+      await fetch(`${_API_BASE}/admin/users/${u.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ status: next }),
+      });
+    } catch {
+      // offline fallback
+    }
     setUsers(prev => prev.map(x => x.id === u.id ? { ...x, status: next } : x));
   }
 
@@ -305,8 +476,17 @@ export default function Users() {
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────
-  function handleDelete() {
+  async function handleDelete() {
     if (!deleteTarget) return;
+    const token = sessionStorage.getItem('jalrakshak_admin_token');
+    try {
+      await fetch(`${_API_BASE}/admin/users/${deleteTarget.id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+    } catch {
+      // offline fallback
+    }
     setUsers(prev => prev.filter(u => u.id !== deleteTarget.id));
     setDeleteTarget(null);
     if (viewUser?.id === deleteTarget.id) setViewUser(null);
@@ -314,8 +494,10 @@ export default function Users() {
 
   // ── User form (shared for add & edit) ─────────────────────────────────────
   function UserForm({ title, subtitle, iconColor, onSave, onCancel }: { title: string; subtitle: string; iconColor: string; onSave: () => void; onCancel: () => void }) {
+    const isFarmer = form.role === 'Farmer';
+
     return (
-      <div style={{ width: '100%', maxWidth: 560, background: 'var(--bg-card)', border: '1px solid var(--border-glass)', borderRadius: 16, boxShadow: '0 24px 80px rgba(0,0,0,0.6)', overflow: 'hidden', animation: 'fadeInModal 0.22s ease-out', margin: '0 auto' }}>
+      <div style={{ width: '100%', maxWidth: 580, background: 'var(--bg-card)', border: '1px solid var(--border-glass)', borderRadius: 16, boxShadow: '0 24px 80px rgba(0,0,0,0.6)', overflow: 'hidden', animation: 'fadeInModal 0.22s ease-out', margin: '0 auto' }}>
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid var(--border-glass)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -334,15 +516,23 @@ export default function Users() {
           {/* Name */}
           <div>
             <label style={labelS()}>Full Name <span style={{ color: '#ef4444' }}>*</span></label>
-            <input style={inputStyle(!!formErrs.name)} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Arjun Patel" />
+            <input style={inputStyle(!!formErrs.name)} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Kishore Patel" />
             {formErrs.name && <div style={{ fontSize: '0.72rem', color: '#ef4444', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}><AlertCircle size={11} />{formErrs.name}</div>}
           </div>
-          {/* Email */}
-          <div>
-            <label style={labelS()}>Email Address <span style={{ color: '#ef4444' }}>*</span></label>
-            <input type="email" style={inputStyle(!!formErrs.email)} value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="e.g. arjun@village.in" />
-            {formErrs.email && <div style={{ fontSize: '0.72rem', color: '#ef4444', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}><AlertCircle size={11} />{formErrs.email}</div>}
+
+          {/* Email & Phone row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div>
+              <label style={labelS()}>Email Address</label>
+              <input type="email" style={inputStyle(!!formErrs.email)} value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="e.g. kishore@khet.in" />
+              {formErrs.email && <div style={{ fontSize: '0.72rem', color: '#ef4444', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}><AlertCircle size={11} />{formErrs.email}</div>}
+            </div>
+            <div>
+              <label style={labelS()}>Phone Number</label>
+              <input style={inputStyle()} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+91 98250 12345" />
+            </div>
           </div>
+
           {/* Role + Status row */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
@@ -352,19 +542,20 @@ export default function Users() {
               </select>
             </div>
             <div>
-              <label style={labelS()}>Status</label>
+              <label style={labelS()}>Account Status</label>
               <select style={inputStyle()} value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as UserStatus }))}>
-                <option value="Active">Active</option>
+                <option value="Active">Active (Approved)</option>
                 <option value="Inactive">Inactive</option>
                 <option value="Suspended">Suspended</option>
               </select>
             </div>
           </div>
+
           {/* Village + District row */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
               <label style={labelS()}>Village / Location <span style={{ color: '#ef4444' }}>*</span></label>
-              <input style={inputStyle(!!formErrs.village)} value={form.village} onChange={e => setForm(f => ({ ...f, village: e.target.value }))} placeholder="e.g. Rajkot" />
+              <input style={inputStyle(!!formErrs.village)} value={form.village} onChange={e => setForm(f => ({ ...f, village: e.target.value }))} placeholder="e.g. Amreli" />
               {formErrs.village && <div style={{ fontSize: '0.72rem', color: '#ef4444', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}><AlertCircle size={11} />{formErrs.village}</div>}
             </div>
             <div>
@@ -376,17 +567,56 @@ export default function Users() {
               {formErrs.district && <div style={{ fontSize: '0.72rem', color: '#ef4444', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}><AlertCircle size={11} />{formErrs.district}</div>}
             </div>
           </div>
-          {/* Phone */}
-          <div>
-            <label style={labelS()}>Phone (optional)</label>
-            <input style={inputStyle()} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+91 98250 XXXXX" />
-          </div>
+
+          {/* Farmer-Specific Fields */}
+          {isFarmer && (
+            <div style={{
+              background: 'rgba(34, 197, 94, 0.08)',
+              border: '1px solid rgba(34, 197, 94, 0.25)',
+              borderRadius: 10,
+              padding: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+            }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22c55e', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Sprout size={14} /> Farm &amp; Crop Details
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12 }}>
+                <div>
+                  <label style={labelS()}>Land Area (Ha)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    style={inputStyle()}
+                    value={form.land_area_ha}
+                    onChange={e => setForm(f => ({ ...f, land_area_ha: parseFloat(e.target.value) || 0 }))}
+                    placeholder="4.5"
+                  />
+                </div>
+                <div>
+                  <label style={labelS()}>Primary Crops</label>
+                  <input
+                    type="text"
+                    style={inputStyle()}
+                    value={form.primary_crops}
+                    onChange={e => setForm(f => ({ ...f, primary_crops: e.target.value }))}
+                    placeholder="e.g. Cotton, Groundnut, Wheat"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Notes */}
           <div>
             <label style={labelS()}>Notes (optional)</label>
             <textarea rows={2} style={{ ...inputStyle(), resize: 'vertical' }} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Any additional notes…" />
           </div>
         </div>
+
         {/* footer */}
         <div style={{ display: 'flex', gap: 8, padding: '14px 22px', borderTop: '1px solid var(--border-glass)', justifyContent: 'flex-end' }}>
           <button onClick={onCancel} style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid var(--border-glass)', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.86rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
@@ -408,7 +638,7 @@ export default function Users() {
       {showAdd && (
         <ModalBackdrop onClose={() => { setShowAdd(false); setForm({ ...BLANK }); setFormErrs({}); }}>
           <UserForm
-            title="Add New User" subtitle="All required fields must be filled." iconColor="#22c55e"
+            title="Add New Platform User / Farmer" subtitle="Assign permissions, farm details, and credentials." iconColor="#22c55e"
             onSave={handleAdd}
             onCancel={() => { setShowAdd(false); setForm({ ...BLANK }); setFormErrs({}); }}
           />
@@ -419,7 +649,7 @@ export default function Users() {
       {editUser && (
         <ModalBackdrop onClose={() => { setEditUser(null); setForm({ ...BLANK }); setFormErrs({}); }}>
           <UserForm
-            title="Edit User" subtitle={`Editing ${editUser.id}`} iconColor="#3b82f6"
+            title="Edit User Profile" subtitle={`Editing ID: ${editUser.id}`} iconColor="#3b82f6"
             onSave={handleEditSave}
             onCancel={() => { setEditUser(null); setForm({ ...BLANK }); setFormErrs({}); }}
           />
@@ -436,8 +666,7 @@ export default function Users() {
               </div>
               <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>Remove User</div>
               <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                Remove <strong style={{ color: 'var(--text-main)' }}>"{deleteTarget.name}"</strong> ({deleteTarget.role}) from the platform?
-                {deleteTarget.isDemo && <span style={{ display: 'block', marginTop: 6, color: '#f59e0b', fontSize: '0.78rem' }}>This is a demo user — they will reappear on next seed load.</span>}
+                Permanently remove <strong style={{ color: 'var(--text-main)' }}>"{deleteTarget.name}"</strong> ({deleteTarget.role}) from the platform?
               </p>
             </div>
             <div style={{ display: 'flex', gap: 8, padding: '0 24px 20px' }}>
@@ -455,7 +684,7 @@ export default function Users() {
             {/* header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid var(--border-glass)', background: 'var(--bg-card-hover)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: ROLE_META[viewUser.role].bg, border: `1px solid ${ROLE_META[viewUser.role].color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', fontWeight: 800, color: ROLE_META[viewUser.role].color }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: ROLE_META[viewUser.role]?.bg || 'rgba(34,197,94,0.12)', border: `1px solid ${ROLE_META[viewUser.role]?.color || '#22c55e'}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', fontWeight: 800, color: ROLE_META[viewUser.role]?.color || '#22c55e' }}>
                   {viewUser.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
@@ -463,7 +692,7 @@ export default function Users() {
                     {viewUser.name}
                     {viewUser.isDemo && <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#f59e0b', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 4, padding: '1px 6px' }}>Demo Data</span>}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 1 }}>{viewUser.email}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 1 }}>{viewUser.email || viewUser.phone || 'No direct contact'}</div>
                 </div>
               </div>
               <button onClick={() => setViewUser(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 4 }}><X size={18} /></button>
@@ -491,6 +720,25 @@ export default function Users() {
                 ))}
               </div>
 
+              {/* Farmer details if Farmer */}
+              {viewUser.role === 'Farmer' && (
+                <div style={{ background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.25)', borderRadius: 8, padding: '12px 14px' }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#22c55e', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Sprout size={13} /> Farm Characteristics
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10, fontSize: '0.82rem' }}>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Land Area: </span>
+                      <strong>{viewUser.land_area_ha || 0} Hectares</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Primary Crops: </span>
+                      <strong>{viewUser.primary_crops || 'Not specified'}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Notes */}
               {viewUser.notes && (
                 <div style={{ background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.18)', borderRadius: 8, padding: '12px 14px' }}>
@@ -498,36 +746,6 @@ export default function Users() {
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{viewUser.notes}</div>
                 </div>
               )}
-
-              {/* Permissions */}
-              <div style={{ background: `${ROLE_META[viewUser.role].bg}`, border: `1px solid ${ROLE_META[viewUser.role].color}33`, borderRadius: 8, padding: '12px 14px' }}>
-                <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: ROLE_META[viewUser.role].color, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <ShieldCheck size={12} /> Role Permissions — {viewUser.role}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 10, lineHeight: 1.5 }}>{ROLE_META[viewUser.role].description}</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {ROLE_META[viewUser.role].permissions.map(p => (
-                    <span key={p} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.68rem', fontWeight: 600, color: ROLE_META[viewUser.role].color, background: 'var(--bg-card)', border: `1px solid ${ROLE_META[viewUser.role].color}33`, borderRadius: 5, padding: '3px 8px' }}>
-                      <CheckCircle2 size={9} />{p}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Activity history stub */}
-              <div style={{ background: 'var(--bg-card-hover)', border: '1px solid var(--border-glass)', borderRadius: 8, padding: '12px 14px' }}>
-                <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 8 }}>Recent Activity</div>
-                {[
-                  { action: 'Logged in to dashboard',         time: viewUser.lastActive },
-                  { action: 'Viewed water health report',     time: viewUser.lastActive },
-                  { action: 'Account created',                time: viewUser.createdAt },
-                ].map((a, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: i < 2 ? '1px solid var(--border-glass)' : 'none', fontSize: '0.78rem' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>{a.action}</span>
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>{daysAgo(a.time)}</span>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* footer */}
@@ -536,10 +754,17 @@ export default function Users() {
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-glass)', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.83rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 <Pencil size={13} /> Edit
               </button>
-              <button onClick={() => { toggleStatus(viewUser); setViewUser(prev => prev ? { ...prev, status: prev.status === 'Active' ? 'Inactive' : 'Active' } : null); }}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: 'none', background: viewUser.status === 'Active' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)', color: viewUser.status === 'Active' ? '#ef4444' : '#22c55e', fontSize: '0.83rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                {viewUser.status === 'Active' ? <><UserX size={13} /> Deactivate</> : <><UserCheck size={13} /> Activate</>}
-              </button>
+              {viewUser.status === 'Active' ? (
+                <button onClick={() => { toggleStatus(viewUser, 'Suspended'); setViewUser(prev => prev ? { ...prev, status: 'Suspended' } : null); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: 'none', background: 'rgba(239,68,68,0.15)', color: '#ef4444', fontSize: '0.83rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <Ban size={13} /> Suspend Account
+                </button>
+              ) : (
+                <button onClick={() => { toggleStatus(viewUser, 'Active'); setViewUser(prev => prev ? { ...prev, status: 'Active' } : null); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: 'none', background: 'rgba(34,197,94,0.15)', color: '#22c55e', fontSize: '0.83rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <UserCheck size={13} /> Activate / Approve
+                </button>
+              )}
             </div>
           </div>
         </ModalBackdrop>
@@ -552,36 +777,79 @@ export default function Users() {
             <UsersIcon size={20} color="#3b82f6" />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800 }}>Users &amp; Roles</h1>
-            <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>Manage platform users, roles and access.</p>
+            <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800 }}>Farmers &amp; Platform Users</h1>
+            <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              Comprehensive administration of registered farmers, farm acreage, and platform roles.
+            </p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            onClick={fetchUsers}
+            disabled={isSyncing}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border-glass)', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.83rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            <RefreshCw size={14} className={isSyncing ? 'spin' : ''} /> {isSyncing ? 'Syncing…' : 'Sync DB'}
+          </button>
           <button onClick={() => setShowRoles(r => !r)}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border-glass)', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.83rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
             <ShieldCheck size={14} /> Roles &amp; Permissions
           </button>
           <button onClick={() => { setForm({ ...BLANK }); setFormErrs({}); setShowAdd(true); }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 16px', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-            <UserPlus size={15} /> Add User
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#22c55e', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 16px', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+            <UserPlus size={15} /> Add Farmer / User
           </button>
         </div>
       </div>
 
       {/* ══ KPI CARDS ════════════════════════════════════════════════════ */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: 12, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 18 }}>
         {([
-          { label: 'Total Users',      val: kpis.total,     color: '#3b82f6' },
-          { label: 'Active Users',     val: kpis.active,    color: '#22c55e' },
-          { label: 'Farmers',          val: kpis.farmers,   color: '#22c55e' },
-          { label: 'Community Users',  val: kpis.community, color: '#8b5cf6' },
-          { label: 'Administrators',   val: kpis.admins,    color: '#3b82f6' },
+          { label: 'Registered Farmers', val: kpis.farmers,   color: '#22c55e', icon: <Sprout size={16} /> },
+          { label: 'Farm Land Covered',  val: `${kpis.totalLand} Ha`, color: '#34d399', icon: <Trees size={16} /> },
+          { label: 'Active Platform Users', val: kpis.active,  color: '#3b82f6', icon: <UserCheck size={16} /> },
+          { label: 'Water Administrators', val: kpis.admins,   color: '#60a5fa', icon: <Crown size={16} /> },
+          { label: 'Community Users',    val: kpis.community, color: '#8b5cf6', icon: <Users2 size={16} /> },
         ] as const).map(k => (
           <div key={k.label} style={{ ...cardS, borderLeft: `3px solid ${k.color}`, padding: '14px 18px' }}>
-            <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{k.label}</div>
-            <div style={{ fontSize: '1.9rem', fontWeight: 900, color: k.color, lineHeight: 1 }}>{k.val}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: '0.71rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{k.label}</span>
+              <span style={{ color: k.color }}>{k.icon}</span>
+            </div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: k.color, lineHeight: 1 }}>{k.val}</div>
           </div>
         ))}
+      </div>
+
+      {/* Quick Filter Tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+        {[
+          { label: 'All Users', key: 'ALL' },
+          { label: `🌾 Farmers Only (${kpis.farmers})`, key: 'Farmer' },
+          { label: '💧 Water Administrators', key: 'Water Administrator' },
+          { label: '👥 Community Users', key: 'Community' },
+        ].map(tab => {
+          const isActive = fRole === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setFRole(tab.key)}
+              style={{
+                background: isActive ? '#3b82f6' : 'var(--bg-card)',
+                color: isActive ? '#fff' : 'var(--text-muted)',
+                border: `1px solid ${isActive ? '#3b82f6' : 'var(--border-glass)'}`,
+                padding: '6px 14px',
+                borderRadius: 8,
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* ══ ROLES & PERMISSIONS SECTION (collapsible) ════════════════════ */}
@@ -642,24 +910,24 @@ export default function Users() {
           </button>
         )}
         <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-          {filtered.length} of {users.length} users
+          {filtered.length} of {users.length} records
         </span>
       </div>
 
       {/* ══ USERS TABLE ══════════════════════════════════════════════════ */}
       <div style={{ ...cardS, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', minWidth: 900 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', minWidth: 960 }}>
             <thead>
               <tr style={{ background: 'var(--bg-card-hover)', borderBottom: '1px solid var(--border-glass)' }}>
-                {['Name', 'Email', 'Role', 'Village / District', 'Status', 'Last Active', 'Actions'].map((h, i) => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: i >= 6 ? 'center' : 'left', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
+                {['Name', 'Contact', 'Role', 'Village / District', 'Land & Crops', 'Status', 'Last Active', 'Actions'].map((h, i) => (
+                  <th key={h} style={{ padding: '12px 16px', textAlign: i >= 7 ? 'center' : 'left', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>No users match the current filters.</td></tr>
+                <tr><td colSpan={8} style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>No users match the current filters.</td></tr>
               )}
               {filtered.map((u, i) => (
                 <tr key={u.id} style={{ borderBottom: '1px solid var(--border-glass)', background: i % 2 === 0 ? 'transparent' : 'var(--bg-card-hover)', transition: 'background 0.15s' }}>
@@ -667,7 +935,7 @@ export default function Users() {
                   {/* Name */}
                   <td style={{ padding: '12px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: ROLE_META[u.role].bg, border: `1px solid ${ROLE_META[u.role].color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 800, color: ROLE_META[u.role].color, flexShrink: 0 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: ROLE_META[u.role]?.bg || 'rgba(34,197,94,0.12)', border: `1px solid ${ROLE_META[u.role]?.color || '#22c55e'}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 800, color: ROLE_META[u.role]?.color || '#22c55e', flexShrink: 0 }}>
                         {u.name.charAt(0)}
                       </div>
                       <div>
@@ -680,8 +948,11 @@ export default function Users() {
                     </div>
                   </td>
 
-                  {/* Email */}
-                  <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '0.78rem' }}>{u.email}</td>
+                  {/* Contact */}
+                  <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                    <div>{u.email || '—'}</div>
+                    {u.phone && <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{u.phone}</div>}
+                  </td>
 
                   {/* Role */}
                   <td style={{ padding: '12px 16px' }}><RoleBadge role={u.role} /></td>
@@ -690,6 +961,24 @@ export default function Users() {
                   <td style={{ padding: '12px 16px' }}>
                     <div style={{ fontWeight: 600 }}>{u.village}</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{u.district}</div>
+                  </td>
+
+                  {/* Land & Crops */}
+                  <td style={{ padding: '12px 16px' }}>
+                    {u.role === 'Farmer' ? (
+                      <div>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#22c55e' }}>
+                          {u.land_area_ha ? `${u.land_area_ha} Ha` : '—'}
+                        </span>
+                        {u.primary_crops && (
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {u.primary_crops}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.74rem' }}>—</span>
+                    )}
                   </td>
 
                   {/* Status */}
@@ -721,10 +1010,15 @@ export default function Users() {
                           <MoreVertical size={13} />
                         </button>
                         {actionMenu === u.id && (
-                          <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', right: 0, top: 34, zIndex: 500, background: 'var(--bg-card)', border: '1px solid var(--border-glass)', borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.35)', minWidth: 170, overflow: 'hidden', animation: 'fadeInModal 0.15s ease-out' }}>
+                          <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', right: 0, top: 34, zIndex: 500, background: 'var(--bg-card)', border: '1px solid var(--border-glass)', borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.35)', minWidth: 180, overflow: 'hidden', animation: 'fadeInModal 0.15s ease-out' }}>
                             {[
                               { label: 'Change Role', icon: <ShieldCheck size={13} />, color: '#3b82f6', action: () => { cycleRole(u); setActionMenu(null); } },
-                              { label: u.status === 'Active' ? 'Deactivate' : 'Activate', icon: u.status === 'Active' ? <UserX size={13} /> : <UserCheck size={13} />, color: u.status === 'Active' ? '#ef4444' : '#22c55e', action: () => { toggleStatus(u); setActionMenu(null); } },
+                              {
+                                label: u.status === 'Active' ? 'Suspend Account' : 'Activate Account',
+                                icon: u.status === 'Active' ? <Ban size={13} /> : <UserCheck size={13} />,
+                                color: u.status === 'Active' ? '#ef4444' : '#22c55e',
+                                action: () => { toggleStatus(u); setActionMenu(null); }
+                              },
                               { label: 'Delete', icon: <Trash2 size={13} />, color: '#ef4444', action: () => { setDeleteTarget(u); setActionMenu(null); } },
                             ].map(item => (
                               <button key={item.label} onClick={item.action}
@@ -747,11 +1041,10 @@ export default function Users() {
         <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border-glass)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
             <Database size={11} />
-            {users.some(u => u.isDemo) && 'Some users are synthetic Demo Data — marked with "Demo" badge.'}
-            {!users.some(u => u.isDemo) && 'All users added from this session.'}
+            Data synchronized with backend SQL database.
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-            Showing {filtered.length} user{filtered.length !== 1 ? 's' : ''}
+            Showing {filtered.length} record{filtered.length !== 1 ? 's' : ''}
           </div>
         </div>
       </div>
@@ -759,6 +1052,8 @@ export default function Users() {
       <style>{`
         @keyframes fadeInModal { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
         @keyframes fadeInUp    { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );

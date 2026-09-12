@@ -395,7 +395,7 @@ export default function RechargePlanner({
   const td = (value: unknown) => translateDynamic(value, lang);
 
   useEffect(() => {
-    getVillages().then((r) => setVillages(r.villages));
+    getVillages().then(r => setVillages(Array.isArray(r?.villages) ? r.villages : [])).catch(() => {});
   }, []);
 
   useEffect(() => {

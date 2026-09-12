@@ -21,3 +21,15 @@ Thumbs.db
 htmlcov/
 .coverage
 *.egg-info/
+.vercel
+
+# Database files � never commit SQLite or Postgres dumps
+*.db
+*.sqlite
+*.sqlite3
+data/jalrakshak.db
+
+
+PRESENTATION_OVERVIEW.md
+EXECUTION_PLAN.md
+START.md

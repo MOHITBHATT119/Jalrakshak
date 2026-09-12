@@ -11,6 +11,8 @@ export default function LandingPage({ setMode }: { setMode: (m: Mode) => void })
   const handleSelectRole = (role: Mode) => {
     if (role === 'admin') {
       nav('/admin/login');
+    } else if (role === 'farmer') {
+      nav('/farmer/login');
     } else {
       setMode(role);
       nav('/dashboard');

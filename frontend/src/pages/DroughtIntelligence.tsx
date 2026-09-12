@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   RadarChart,
   Radar,
@@ -13,12 +14,20 @@ import {
   Village
 } from '../services/api';
 import VillageSelect from '../components/VillageSelect';
+import { useFarmerAuth } from '../context/FarmerAuthContext';
 import {
   Thermometer,
   AlertTriangle,
   Search,
   ChevronRight,
-  Zap
+  Zap,
+  Sprout,
+  MapPin,
+  RotateCcw,
+  LayoutDashboard,
+  MessageSquare,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
 
 interface Props {
@@ -252,7 +261,52 @@ const T: Record<string, { gu: string }> = {
 
   'Plan for upcoming season water requirements': {
     gu: 'આવતી સીઝન માટે પાણીની જરૂરિયાતનું આયોજન કરો'
-  }
+  },
+
+  // District & Farmer Filter translations
+  'District:': {
+    gu: 'જિલ્લો:'
+  },
+  'All Districts (10 Districts)': {
+    gu: 'તમામ ૧૦ જિલ્લા (All Saurashtra)'
+  },
+  'Farmer Location Filter': {
+    gu: 'ખેડૂત સ્થાન ફિલ્ટર'
+  },
+  'Registered Farmland:': {
+    gu: 'નોંધાયેલ ખેતીલાયક જમીન:'
+  },
+  'Reset to My Village': {
+    gu: 'મારા ગામ પર પાછા જાઓ'
+  },
+  'Open Crop Advisor': {
+    gu: 'પાક સલાહકાર ખોલો'
+  },
+  'Navigate to Dashboard': {
+    gu: 'ડેશબોર્ડ પર જાઓ'
+  },
+  'Ask Copilot About Drought': {
+    gu: 'દુષ્કાળ વિશે Copilot ને પૂછો'
+  },
+  'Explore recommended drought-resilient crops and water saving': {
+    gu: 'દુષ્કાળ-સહિષ્ણુ પાકો અને પાણી બચતની ભલામણો જુઓ'
+  },
+  'Return to your personalized farmer overview': {
+    gu: 'તમારા વ્યક્તિગત ખેડૂત અવલોકન પર પાછા જાઓ'
+  },
+  'Get AI-powered guidance on drought mitigation': {
+    gu: 'દુષ્કાળ નિવારણ માટે AI માર્ગદર્શન મેળવો'
+  },
+  'Amreli': { gu: 'અમરેલી' },
+  'Bhavnagar': { gu: 'ભાવનગર' },
+  'Devbhumi Dwarka': { gu: 'દેવભૂમિ દ્વારકા' },
+  'Gir Somnath': { gu: 'ગીર સોમનાથ' },
+  'Jamnagar': { gu: 'જામનગર' },
+  'Junagadh': { gu: 'જૂનાગઢ' },
+  'Morbi': { gu: 'મોરબી' },
+  'Porbandar': { gu: 'પોરબંદર' },
+  'Rajkot': { gu: 'રાજકોટ' },
+  'Surendranagar': { gu: 'સુરેન્દ્રનગર' }
 };
 
 /* ─────────────────────────────────────────────
@@ -449,18 +503,140 @@ export default function DroughtIntelligence({
   setSelectedVillage,
   lang
 }: Props) {
+  const { farmerUser, isAuthenticated } = useFarmerAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [villages, setVillages] = useState<Village[]>([]);
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('ALL');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const hasAutoMatchedFarmer = useRef(false);
 
   const t = (key: string) => tr(key, lang);
 
   /* Load villages */
   useEffect(() => {
     getVillages()
-      .then(r => setVillages(r.villages))
+      .then(r => setVillages(Array.isArray(r?.villages) ? r.villages : []))
       .catch(() => setVillages([]));
   }, []);
+
+  /* Extract unique districts */
+  const districts = useMemo(() => {
+    const dSet = new Set<string>();
+    villages.forEach(v => {
+      if (v.district) dSet.add(v.district);
+    });
+    return Array.from(dSet).sort();
+  }, [villages]);
+
+  /* Auto-select farmer district and village when villages or farmer profile loads */
+  useEffect(() => {
+    if (villages.length === 0) return;
+
+    // Check location state first if navigated from dashboard
+    const stateLoc = location.state as { district?: string; village?: string; fromFarmerDashboard?: boolean } | null;
+    const targetDistrict = stateLoc?.district || (isAuthenticated && farmerUser ? farmerUser.district : null);
+    const targetVillage = stateLoc?.village || (isAuthenticated && farmerUser ? farmerUser.village : null);
+
+    if (targetDistrict && (!hasAutoMatchedFarmer.current || stateLoc?.fromFarmerDashboard)) {
+      hasAutoMatchedFarmer.current = true;
+
+      // Match village in villages list
+      let matched = villages.find(
+        v => v.district.toLowerCase() === targetDistrict.toLowerCase() &&
+             v.name.toLowerCase() === (targetVillage || '').toLowerCase()
+      );
+
+      if (!matched && targetVillage) {
+        matched = villages.find(
+          v => v.district.toLowerCase() === targetDistrict.toLowerCase() &&
+               (v.name.toLowerCase().includes(targetVillage.toLowerCase()) ||
+                targetVillage.toLowerCase().includes(v.name.toLowerCase()))
+        );
+      }
+
+      if (!matched && targetVillage) {
+        matched = villages.find(v => v.village_id.toLowerCase() === targetVillage.toLowerCase());
+      }
+
+      if (!matched) {
+        matched = villages.find(v => v.district.toLowerCase() === targetDistrict.toLowerCase());
+      }
+
+      if (matched) {
+        setSelectedDistrict(matched.district);
+        setSelectedVillage(matched.village_id);
+      } else {
+        setSelectedDistrict(targetDistrict);
+      }
+    }
+  }, [villages, farmerUser, isAuthenticated, location.state, setSelectedVillage]);
+
+  /* Filter villages by selected district */
+  const filteredVillages = useMemo(() => {
+    if (selectedDistrict === 'ALL') return villages;
+    return villages.filter(v => v.district.toLowerCase() === selectedDistrict.toLowerCase());
+  }, [villages, selectedDistrict]);
+
+  /* Handle district change */
+  const handleDistrictChange = (newDistrict: string) => {
+    setSelectedDistrict(newDistrict);
+    if (newDistrict === 'ALL') return;
+
+    // Check if current selected village belongs to this district
+    const currentBelongs = villages.find(
+      v => v.village_id === selectedVillage && v.district.toLowerCase() === newDistrict.toLowerCase()
+    );
+
+    if (!currentBelongs) {
+      // If farmer belongs to this district, select farmer's village
+      if (isAuthenticated && farmerUser && farmerUser.district.toLowerCase() === newDistrict.toLowerCase()) {
+        const farmerMatch = villages.find(
+          v => v.district.toLowerCase() === newDistrict.toLowerCase() &&
+               v.name.toLowerCase() === (farmerUser.village || '').toLowerCase()
+        );
+        if (farmerMatch) {
+          setSelectedVillage(farmerMatch.village_id);
+          return;
+        }
+      }
+      // Otherwise pick the first village in that district
+      const firstInDistrict = villages.find(
+        v => v.district.toLowerCase() === newDistrict.toLowerCase()
+      );
+      if (firstInDistrict) {
+        setSelectedVillage(firstInDistrict.village_id);
+      }
+    }
+  };
+
+  /* Helper to reset back to farmer's registered location */
+  const handleResetToFarmerLocation = () => {
+    if (!farmerUser) return;
+    const matched = villages.find(
+      v => v.district.toLowerCase() === farmerUser.district.toLowerCase() &&
+           v.name.toLowerCase() === farmerUser.village.toLowerCase()
+    ) || villages.find(
+      v => v.district.toLowerCase() === farmerUser.district.toLowerCase()
+    );
+
+    if (matched) {
+      setSelectedDistrict(matched.district);
+      setSelectedVillage(matched.village_id);
+    }
+  };
+
+  const selectedVillageObj = villages.find(v => v.village_id === selectedVillage);
+  const isFarmerLocationActive = Boolean(
+    isAuthenticated &&
+    farmerUser &&
+    selectedVillageObj &&
+    selectedVillageObj.district.toLowerCase() === (farmerUser.district || '').toLowerCase() &&
+    (selectedVillageObj.name.toLowerCase() === (farmerUser.village || '').toLowerCase() ||
+     (farmerUser.village || '').toLowerCase().includes(selectedVillageObj.name.toLowerCase()))
+  );
 
   /* Load drought data */
   useEffect(() => {
@@ -505,7 +681,7 @@ export default function DroughtIntelligence({
   return (
     <div>
       {/* ───────────────── Header ───────────────── */}
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
         <div>
           <h1>
             <Thermometer
@@ -528,15 +704,153 @@ export default function DroughtIntelligence({
           </p>
         </div>
 
-        <VillageSelect
-          villages={villages}
-          value={selectedVillage}
-          onChange={setSelectedVillage}
-          width={220}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {/* District Filter Selector */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 12px',
+              background: 'var(--vs-bg, var(--bg-dark))',
+              border: '1px solid var(--vs-border, rgba(59,130,246,0.25))',
+              borderRadius: 8,
+              boxSizing: 'border-box',
+            }}
+          >
+            <Layers size={16} color="#38bdf8" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              {t('District:')}
+            </span>
+            <select
+              value={selectedDistrict}
+              onChange={e => handleDistrictChange(e.target.value)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-main)',
+                fontSize: '0.86rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                outline: 'none',
+                fontFamily: 'inherit',
+                maxWidth: 170,
+              }}
+              aria-label="Filter by District"
+            >
+              <option value="ALL" style={{ background: '#0f172a', color: '#fff' }}>
+                {t('All Districts (10 Districts)')}
+              </option>
+              {districts.map(d => (
+                <option key={d} value={d} style={{ background: '#0f172a', color: '#fff' }}>
+                  {d} {lang === 'gu' && T[d]?.gu ? `(${T[d].gu})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Village Selector (filtered by selectedDistrict) */}
+          <VillageSelect
+            villages={filteredVillages}
+            value={selectedVillage}
+            onChange={setSelectedVillage}
+            width={210}
+          />
+        </div>
       </div>
 
       <div className="page-body">
+        {/* ─────────────── Farmer Login Filter Active Banner ─────────────── */}
+        {isAuthenticated && farmerUser && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 12,
+              padding: '12px 18px',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(14, 165, 233, 0.08))',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: 12,
+              marginBottom: 16,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  flexShrink: 0,
+                }}
+              >
+                <Sprout size={18} color="#34d399" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#f0fdf4' }}>
+                    {t('Farmer Location Filter')}: {farmerUser.name}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      padding: '2px 8px',
+                      borderRadius: 10,
+                      background: isFarmerLocationActive
+                        ? 'rgba(16, 185, 129, 0.25)'
+                        : 'rgba(245, 158, 11, 0.2)',
+                      border: isFarmerLocationActive
+                        ? '1px solid rgba(16, 185, 129, 0.5)'
+                        : '1px solid rgba(245, 158, 11, 0.5)',
+                      color: isFarmerLocationActive ? '#34d399' : '#fbbf24',
+                    }}
+                  >
+                    {isFarmerLocationActive
+                      ? (lang === 'gu' ? '✓ સક્રિય ફાર્મ સ્થાન' : '✓ Active Farm Location')
+                      : (lang === 'gu' ? 'અન્ય સ્થાન બ્રાઉઝ કરી રહ્યા છો' : 'Browsing Different Village')}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.76rem', color: '#94a3b8', marginTop: 2 }}>
+                  <span style={{ color: '#cbd5e1' }}>{t('Registered Farmland:')}</span>{' '}
+                  <strong style={{ color: '#38bdf8' }}>{farmerUser.village}</strong>,{' '}
+                  <strong style={{ color: '#a78bfa' }}>{farmerUser.district}</strong>{' '}
+                  ({farmerUser.land_area_ha || 4.5} ha · {farmerUser.primary_crops || 'Cotton, Groundnut'})
+                </div>
+              </div>
+            </div>
+
+            {!isFarmerLocationActive && (
+              <button
+                onClick={handleResetToFarmerLocation}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '7px 14px',
+                  borderRadius: 8,
+                  background: 'rgba(16, 185, 129, 0.22)',
+                  border: '1px solid rgba(16, 185, 129, 0.5)',
+                  color: '#34d399',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <RotateCcw size={14} />
+                {t('Reset to My Village')} ({farmerUser.village})
+              </button>
+            )}
+          </div>
+        )}
         {/* ───────────────── Loading ───────────────── */}
         {loading ? (
           <div className="loading">
@@ -920,6 +1234,173 @@ export default function DroughtIntelligence({
                       </div>
                     )
                   )}
+                </div>
+              </div>
+
+              {/* ───────────────── Bottom Quick Actions ───────────────── */}
+              <div
+                style={{
+                  marginTop: 24,
+                  padding: '20px',
+                  background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.6))',
+                  border: '1px solid var(--border-glass)',
+                  borderRadius: 14,
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                  gap: 16,
+                }}
+              >
+                {/* Crop Advisor Navigation */}
+                <div
+                  onClick={() => navigate('/crops', { state: { selectedVillage } })}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    padding: '14px 16px',
+                    background: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.16)';
+                    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.25)';
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: 'rgba(16, 185, 129, 0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Sprout size={20} color="#34d399" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {t('Open Crop Advisor')}
+                      <ChevronRight size={15} />
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: 2 }}>
+                      {t('Explore recommended drought-resilient crops and water saving')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dashboard Navigation */}
+                <div
+                  onClick={() => navigate(isAuthenticated ? '/farmer/dashboard' : '/dashboard')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    padding: '14px 16px',
+                    background: 'rgba(56, 189, 248, 0.08)',
+                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(56, 189, 248, 0.16)';
+                    e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.5)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'rgba(56, 189, 248, 0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.25)';
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: 'rgba(56, 189, 248, 0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <LayoutDashboard size={20} color="#38bdf8" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {t('Navigate to Dashboard')}
+                      <ChevronRight size={15} />
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: 2 }}>
+                      {t('Return to your personalized farmer overview')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Copilot Drought Ask */}
+                <div
+                  onClick={() =>
+                    navigate('/copilot', {
+                      state: {
+                        initialPrompt:
+                          lang === 'gu'
+                            ? `${data?.village_name || ''} ગામ માટે દુષ્કાળ જોખમ સ્કોર ${data?.risk_score || ''}/100 છે (${data?.risk_level || ''}). અમે કયા તાત્કાલિક જળ સંચય અને સિંચાઈ પગલાં લેવા જોઈએ?`
+                            : `What are the immediate drought actions and irrigation recommendations for ${data?.village_name || ''} with risk score ${data?.risk_score || ''}/100 (${data?.risk_level || ''})?`
+                      }
+                    })
+                  }
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    padding: '14px 16px',
+                    background: 'rgba(167, 139, 250, 0.08)',
+                    border: '1px solid rgba(167, 139, 250, 0.25)',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(167, 139, 250, 0.16)';
+                    e.currentTarget.style.borderColor = 'rgba(167, 139, 250, 0.5)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'rgba(167, 139, 250, 0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(167, 139, 250, 0.25)';
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: 'rgba(167, 139, 250, 0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <MessageSquare size={20} color="#a78bfa" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {t('Ask Copilot About Drought')}
+                      <ChevronRight size={15} />
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: 2 }}>
+                      {t('Get AI-powered guidance on drought mitigation')}
+                    </div>
+                  </div>
                 </div>
               </div>
             </>

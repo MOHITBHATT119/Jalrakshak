@@ -16,7 +16,8 @@ interface Props {
   dropdownAlign?: 'left' | 'right';
 }
 
-export default function VillageSelect({ villages, value, onChange, width = 220, dropdownAlign = 'left' }: Props) {
+export default function VillageSelect({ villages: _villages, value, onChange, width = 220, dropdownAlign = 'left' }: Props) {
+  const villages = Array.isArray(_villages) ? _villages : [];
   const [open, setOpen]       = useState(false);
   const [query, setQuery]     = useState('');
   const containerRef          = useRef<HTMLDivElement>(null);

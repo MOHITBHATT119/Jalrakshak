@@ -49,7 +49,7 @@ export default function WaterBudget({ selectedVillage, setSelectedVillage, lang 
 
   const t = (key: string) => tr(key, lang);
 
-  useEffect(() => { getVillages().then(r => setVillages(r.villages)); }, []);
+  useEffect(() => { getVillages().then(r => setVillages(Array.isArray(r?.villages) ? r.villages : [])).catch(() => {}); }, []);
 
   useEffect(() => {
     if (!selectedVillage) return;

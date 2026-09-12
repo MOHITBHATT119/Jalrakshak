@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   ClipboardList, Clock, MapPin, DollarSign, Calendar,
   MoreVertical, Plus, Search, Filter, Play, CheckCircle2,
@@ -145,6 +146,7 @@ function validate(f: FormState): Partial<Record<keyof FormState, string>> {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ActionPlan() {
+  const { t } = useLanguage();
   const [plans, setPlans]           = useState<Plan[]>(loadPlans);
   const [search, setSearch]         = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
@@ -167,7 +169,7 @@ export default function ActionPlan() {
   const [backendVillages, setBackendVillages] = useState<Village[]>([]);
 
   useEffect(() => {
-    getVillages().then(d => setBackendVillages(d.villages)).catch(() => {});
+    getVillages().then(d => setBackendVillages(Array.isArray(d?.villages) ? d.villages : [])).catch(() => {});
   }, []);
 
   // Persist whenever plans change
@@ -413,7 +415,7 @@ export default function ActionPlan() {
               </div>
               <div>
                 <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>
-                  {modalMode === 'create' ? 'Create New Action Plan' : 'Edit Action Plan'}
+                  {modalMode === 'create' ? t('create') + ' ' + t('actionPlan') : t('edit') + ' ' + t('actionPlan')}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 1 }}>
                   {modalMode === 'create' ? 'All required fields must be filled.' : `Editing ${activePlan?.id}`}
@@ -605,7 +607,7 @@ export default function ActionPlan() {
               onClick={closeModal}
               style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid var(--border-glass)', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               onClick={handleSave}
@@ -784,7 +786,7 @@ export default function ActionPlan() {
             <div style={{ width: 38, height: 38, borderRadius: 9, background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ClipboardList size={18} color="#3b82f6" />
             </div>
-            <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Action Plans</h1>
+            <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>{t('actionPlan')}</h1>
           </div>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>Track and manage water intervention projects across villages.</p>
         </div>
@@ -792,17 +794,17 @@ export default function ActionPlan() {
           onClick={openCreate}
           style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'inherit' }}
         >
-          <Plus size={16} /> New Action Plan
+          <Plus size={16} /> {t('newPlan')}
         </button>
       </div>
 
       {/* ── SUMMARY STATS ──────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
         {[
-          { label: 'Total Plans',   val: plans.length,                                              color: '#3b82f6' },
-          { label: 'In Progress',   val: plans.filter(p => p.status === 'IN PROGRESS').length,      color: '#f59e0b' },
-          { label: 'Completed',     val: plans.filter(p => p.status === 'COMPLETED').length,        color: '#22c55e' },
-          { label: 'Total Budget',  val: '₹' + plans.reduce((a, p) => a + p.budget, 0).toFixed(1) + ' L', color: '#a78bfa' },
+          { label: t('actionPlan'),  val: plans.length,                                              color: '#3b82f6' },
+          { label: t('inProgress'),  val: plans.filter(p => p.status === 'IN PROGRESS').length,      color: '#f59e0b' },
+          { label: t('completed'),   val: plans.filter(p => p.status === 'COMPLETED').length,        color: '#22c55e' },
+          { label: t('budget'),      val: '₹' + plans.reduce((a, p) => a + p.budget, 0).toFixed(1) + ' L', color: '#a78bfa' },
         ].map((s, i) => (
           <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)', borderLeft: `3px solid ${s.color}`, borderRadius: 10, padding: '16px 20px' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{s.label}</div>
@@ -831,10 +833,10 @@ export default function ActionPlan() {
             onChange={e => setFilterStatus(e.target.value)}
             style={{ background: 'var(--bg-dark)', border: '1px solid var(--border-glass)', color: 'var(--text-main)', borderRadius: 6, padding: '6px 10px', fontSize: '0.85rem', outline: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
           >
-            <option value="ALL">All Statuses</option>
-            <option value="PLANNED">Planned</option>
-            <option value="IN PROGRESS">In Progress</option>
-            <option value="COMPLETED">Completed</option>
+            <option value="ALL">{t('all')}</option>
+            <option value="PLANNED">{t('planned')}</option>
+            <option value="IN PROGRESS">{t('inProgress')}</option>
+            <option value="COMPLETED">{t('completed')}</option>
           </select>
         </div>
       </div>
@@ -844,7 +846,7 @@ export default function ActionPlan() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem', minWidth: 800 }}>
           <thead>
             <tr style={{ background: 'var(--bg-card-hover)', borderBottom: '1px solid var(--border-glass)' }}>
-              {['Plan Details', 'Location', 'Status', 'Timeline & Budget', 'Owner', 'Action'].map((h, i) => (
+              {[t('title'), t('location'), t('status'), t('budget'), t('owner'), t('recommendedAction')].map((h, i) => (
                 <th key={h} style={{ padding: '14px 20px', textAlign: i === 5 ? 'center' : 'left', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>{h}</th>
               ))}
             </tr>

@@ -17,6 +17,28 @@ from app.services.database import (
 init_db()
 
 
+# ── Safe numeric coercion helpers ──────────────────────────────────────────
+
+def safe_int(val, default: int = 0) -> int:
+    """Safely convert any value to int, guarding against None, NaN, and invalid strings."""
+    if val is None:
+        return default
+    try:
+        return int(float(str(val).strip()))
+    except (ValueError, TypeError):
+        return default
+
+
+def safe_float(val, default: float = 0.0) -> float:
+    """Safely convert any value to float, guarding against None, NaN, and invalid strings."""
+    if val is None:
+        return default
+    try:
+        return float(str(val).strip())
+    except (ValueError, TypeError):
+        return default
+
+
 # ── public API (same signatures as before) ───────────────────────────────────
 
 def get_all_villages() -> list:
@@ -56,7 +78,7 @@ def get_village_groundwater_series(village_id: str) -> list:
     raw = get_groundwater_data(village_id)
     village = get_village(village_id)
     if not raw and village:
-        base = float(village.get("groundwater_depth_m", 15.0))
+        base = safe_float(village.get("groundwater_depth_m"), 15.0)
         series = []
         for year in range(2019, 2025):
             for month in [1, 6, 12]:

@@ -266,122 +266,51 @@ jalrakshak-ai/
 ├── .env-example
 ├── .gitignore
 ├── docker-compose.yml
+├── fly.toml
+├── render.yaml
 ├── README.md
-├── reseed_db.py
-├── update_dashboard.py
-│
-├── setup_project.bat
-├── start_backend.bat
-├── start_frontend.bat
-├── start_project.bat
-├── stop_project.bat
-└── health_check.bat
+├── START.md
+├── PRESENTATION_OVERVIEW.md
+└── EXECUTION_PLAN.md
 ```
 
 ------------------------------------------------------------------------
 
-## Installation
+## Installation & Quick Start
+
+Please refer to **[START.md](START.md)** for detailed step-by-step startup instructions for both backend and frontend.
 
 ### Prerequisites
 
 -   Python 3.10+
 -   Node.js 18+
 -   npm
--   Docker Desktop (optional)
 
-### Windows Quick Start
+### Quick Start Summary
 
-``` bat
-setup_project.bat
-```
+1. **Setup `.env`**:
+   ```bash
+   cp .env-example .env
+   ```
 
-Add your IBM Cloud / watsonx API key to `.env`, then:
+2. **Start Backend**:
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   python -m uvicorn main:app --port 8001 --reload
+   ```
 
-``` bat
-start_project.bat
-```
+3. **Start Frontend**:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
-------------------------------------------------------------------------
-
-## Manual Setup
-
-### Backend
-
-``` bash
-py -m venv .venv
-.venv\Scripts\pip install -r backend\requirements.txt
-```
-
-### Frontend
-
-``` bash
-cd frontend
-npm install
-```
-
-------------------------------------------------------------------------
-
-## Environment Variables
-
-Create `.env` from `.env-example`:
-
-``` dotenv
-WATSONX_PROJECT_ID=your_project_id
-WATSONX_API_KEY=your_ibm_cloud_api_key
-WATSONX_AI_URL=https://us-south.ml.cloud.ibm.com
-WATSONX_MODEL_ID=ibm/granite-4-h-small
-DEMO_MODE=false
-```
-
-**Never commit `.env` to GitHub.** Only `.env-example` should be
-committed.
-
-------------------------------------------------------------------------
-
-## Running Locally
-
-### Backend
-
-``` bat
-start_backend.bat
-```
-
-Or:
-
-``` bash
-.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8001 --app-dir backend
-```
-
-Backend:
-
-``` text
-http://localhost:8001
-```
-
-### Frontend
-
-``` bat
-start_frontend.bat
-```
-
-Or:
-
-``` bash
-cd frontend
-npm run dev
-```
-
-Frontend:
-
-``` text
-http://localhost:5173
-```
-
-### Run Everything
-
-``` bat
-start_project.bat
-```
+4. **Access Applications**:
+   - Frontend: `http://localhost:5173`
+   - Admin Login: `http://localhost:5173/admin/login` (`admin` / `admin@123`)
+   - Backend API Docs: `http://localhost:8001/docs`
 
 ------------------------------------------------------------------------
 

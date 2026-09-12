@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   FileText, Search, Filter, Eye, ClipboardList, UserCheck,
   CheckCircle2, XCircle, X, AlertCircle, CheckCircle, RefreshCw,
@@ -323,6 +324,7 @@ function solidBtn(color: string): React.CSSProperties {
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function FieldReports() {
+  const { t } = useLanguage();
   const nav = useNavigate();
 
   const [reports, setReports]   = useState<FieldReport[]>(loadReports);
@@ -356,7 +358,7 @@ export default function FieldReports() {
   const [showActivityIds, setShowActivityIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    getVillages().then(d => setVillages(d.villages)).catch(() => {});
+    getVillages().then(d => setVillages(Array.isArray(d?.villages) ? d.villages : [])).catch(() => {});
     getHealth().then(h => setIsDemo(h.demo_mode)).catch(() => {});
   }, []);
 
@@ -724,7 +726,7 @@ export default function FieldReports() {
             <FileText size={20} color="#3b82f6" />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800 }}>Field Reports</h1>
+            <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800 }}>{t('fieldReports')}</h1>
             <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '0.83rem' }}>
               Review and manage water-related issues reported from villages.
               {isDemo && <span style={{ marginLeft: 8, fontSize: '0.72rem', padding: '2px 8px', borderRadius: 20, fontWeight: 800, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b' }}>Demo Mode</span>}

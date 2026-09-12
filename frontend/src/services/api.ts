@@ -9,17 +9,49 @@ const API_BASE = (typeof __API_BASE__ !== 'undefined' && __API_BASE__)
   ? `${__API_BASE__}/api/v1`
   : '/api/v1';
 
+const TOKEN_KEY = 'jalrakshak_admin_token';
+
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 60000,
   headers: { 'Content-Type': 'application/json' },
 });
 
+// ── Request interceptor: attach JWT when present ─────────────────────────────
+api.interceptors.request.use((config) => {
+  const token = sessionStorage.getItem(TOKEN_KEY);
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ── Response interceptor: on 401, clear token and redirect to login ──────────
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      // Clear stale token
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem('jalrakshak_admin_role');
+      // Redirect to admin login if currently on an admin page
+      if (window.location.pathname.startsWith('/admin') &&
+          !window.location.pathname.includes('/admin/login')) {
+        window.location.href = '/admin/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ---- Types ----
 export interface Village {
   village_id: string;
   name: string;
   district: string;
+  taluka?: string;
+  lgd_code?: string;
   lat: number;
   lon: number;
   population: number;
@@ -28,6 +60,7 @@ export interface Village {
   annual_rainfall_mm: number;
   groundwater_depth_m: number;
   aquifer_type: string;
+  data_source?: 'demo' | 'estimated' | 'live';
 }
 
 export interface GroundwaterResult {
@@ -111,8 +144,10 @@ export interface HealthResponse {
 export interface DataTableStat {
   total_rows: number;
   live_rows: number;
+  estimated_rows: number;
   demo_rows: number;
   has_live: boolean;
+  has_estimated: boolean;
   last_updated: string | null;
 }
 
@@ -143,6 +178,11 @@ export const previewDataTable = (table: string, villageId?: string) => {
   const params = villageId ? `?village_id=${villageId}` : '';
   return api.get(`/data/preview/${table}${params}`).then(r => r.data);
 };
+
+/** Authenticate and retrieve JWT — stored automatically by AdminAuthContext */
+export const loginAdmin = (username: string, password: string) =>
+  api.post<{ access_token: string; token_type: string }>('/auth/login', { username, password })
+    .then(r => r.data);
 
 export const getVillages = () => api.get<{ villages: Village[]; count: number }>('/villages').then(r => r.data);
 

@@ -1,11 +1,56 @@
-village_id,name,district,lat,lon,population,agricultural_area_ha,primary_crops,annual_rainfall_mm,groundwater_depth_m,aquifer_type
-V001,Rajkot,Rajkot,22.3039,70.8022,1500000,45000,Cotton;Groundnut;Wheat,650,18.5,alluvial
-V002,Junagadh,Junagadh,21.5222,70.4579,320000,38000,Groundnut;Cotton;Millet,750,14.2,alluvial
-V003,Amreli,Amreli,21.6009,71.2214,58000,42000,Groundnut;Cotton;Castor,600,22.1,hard_rock
-V004,Bhavnagar,Bhavnagar,21.7645,72.1519,593000,35000,Wheat;Cotton;Sesame,550,25.3,alluvial
-V005,Jamnagar,Jamnagar,22.4707,70.0577,479000,40000,Groundnut;Cotton;Vegetables,680,16.8,alluvial
-V006,Porbandar,Porbandar,21.6425,69.6293,133000,18000,Groundnut;Millet;Vegetables,720,12.5,coastal
-V007,Surendranagar,Surendranagar,22.7277,71.6522,180000,55000,Cotton;Wheat;Castor,450,28.7,hard_rock
-V008,Morbi,Morbi,22.8171,70.8378,196000,32000,Cotton;Groundnut;Wheat,500,24.2,alluvial
-V009,Gir Somnath,Gir Somnath,20.9060,70.3707,120000,28000,Groundnut;Mango;Cotton,780,11.3,hard_rock
-V010,Devbhumi Dwarka,Devbhumi Dwarka,22.2393,68.9687,45000,22000,Groundnut;Cotton;Millet,600,19.8,coastal
+village_id,name,district,taluka,lgd_code,lat,lon,population,agricultural_area_ha,primary_crops,annual_rainfall_mm,groundwater_depth_m,aquifer_type,data_source
+V001,Rajkot,Rajkot,Rajkot,0581,22.3039,70.8022,1500000,45000,Cotton;Groundnut;Wheat,650,18.5,alluvial,demo
+V002,Junagadh,Junagadh,Junagadh,0582,21.5222,70.4579,320000,38000,Groundnut;Cotton;Millet,750,14.2,alluvial,demo
+V003,Amreli,Amreli,Amreli,0583,21.6009,71.2214,58000,42000,Groundnut;Cotton;Castor,600,22.1,hard_rock,demo
+V004,Bhavnagar,Bhavnagar,Bhavnagar,0584,21.7645,72.1519,593000,35000,Wheat;Cotton;Sesame,550,25.3,alluvial,demo
+V005,Jamnagar,Jamnagar,Jamnagar,0585,22.4707,70.0577,479000,40000,Groundnut;Cotton;Vegetables,680,16.8,alluvial,demo
+V006,Porbandar,Porbandar,Porbandar,0586,21.6425,69.6293,133000,18000,Groundnut;Millet;Vegetables,720,12.5,coastal,demo
+V007,Surendranagar,Surendranagar,Surendranagar,0587,22.7277,71.6522,180000,55000,Cotton;Wheat;Castor,450,28.7,hard_rock,demo
+V008,Morbi,Morbi,Morbi,0588,22.8171,70.8378,196000,32000,Cotton;Groundnut;Wheat,500,24.2,alluvial,demo
+V009,Gir Somnath,Gir Somnath,Veraval,0589,20.9060,70.3707,120000,28000,Groundnut;Mango;Cotton,780,11.3,hard_rock,demo
+V010,Devbhumi Dwarka,Devbhumi Dwarka,Dwarka,0590,22.2393,68.9687,45000,22000,Groundnut;Cotton;Millet,600,19.8,coastal,demo
+RKT001,Kothariya,Rajkot,Rajkot,581001,22.2695,70.7988,8420,3200,Cotton;Groundnut,648,19.2,alluvial,estimated
+RKT002,Aji Dam Village,Rajkot,Rajkot,581002,22.3215,70.8531,6780,2800,Groundnut;Wheat,648,17.8,alluvial,estimated
+RKT003,Mevasa,Rajkot,Rajkot,581003,22.2901,70.8215,4560,1900,Cotton;Castor,645,20.5,alluvial,estimated
+RKT004,Dedadra,Rajkot,Rajkot,581004,22.3401,70.7712,3210,1400,Groundnut;Millet,650,18.9,alluvial,estimated
+RKT005,Bhayavadar,Rajkot,Jetpur,581005,21.8956,70.6234,12300,5600,Groundnut;Cotton,680,15.4,alluvial,estimated
+RKT006,Paddhari,Rajkot,Paddhari,581006,22.4358,70.5923,9870,4200,Cotton;Castor;Millet,620,22.1,hard_rock,estimated
+RKT007,Vinchhiya,Rajkot,Vinchhiya,581007,22.5621,70.9834,5640,2300,Groundnut;Wheat,590,24.3,hard_rock,estimated
+RKT008,Lodhika,Rajkot,Lodhika,581008,22.4012,71.0156,7890,3500,Cotton;Groundnut,610,21.7,alluvial,estimated
+RKT009,Gondal,Rajkot,Gondal,581009,21.9618,70.7967,37800,14000,Groundnut;Cotton;Vegetables,660,16.2,alluvial,estimated
+RKT010,Jetpur,Rajkot,Jetpur,581010,21.7556,70.6234,75200,18000,Groundnut;Cotton,672,14.8,alluvial,estimated
+RKT011,Dhoraji,Rajkot,Dhoraji,581011,21.7311,70.4519,75000,16000,Groundnut;Millet,695,13.5,alluvial,estimated
+RKT012,Upleta,Rajkot,Upleta,581012,21.7417,70.2834,50400,13000,Groundnut;Cotton,705,12.9,alluvial,estimated
+RKT013,Tankara,Rajkot,Tankara,581013,22.6834,70.7456,18600,7800,Cotton;Castor,510,26.4,hard_rock,estimated
+RKT014,Wankaner,Rajkot,Wankaner,581014,22.6167,71.0000,52100,14500,Cotton;Groundnut,530,23.8,hard_rock,estimated
+RKT015,Jasdan,Rajkot,Jasdan,581015,22.0354,71.2084,28400,10200,Groundnut;Cotton,615,20.1,alluvial,estimated
+JNG001,Mendarda,Junagadh,Mendarda,582001,21.3167,70.4333,18400,7200,Groundnut;Mango,770,13.8,hard_rock,estimated
+JNG002,Bhesan,Junagadh,Bhesan,582002,21.0891,71.2612,24600,9800,Groundnut;Cotton,735,15.2,alluvial,estimated
+JNG003,Keshod,Junagadh,Keshod,582003,21.3034,70.2456,31200,11000,Groundnut;Mango;Banana,780,12.4,alluvial,estimated
+JNG004,Mangrol,Junagadh,Mangrol,582004,21.1209,70.1156,30800,8900,Groundnut;Millet;Fish,798,11.8,coastal,estimated
+JNG005,Talala,Gir Somnath,Talala,582005,21.0234,70.5023,22100,8400,Mango;Groundnut,802,11.2,hard_rock,estimated
+JNG006,Visavadar,Junagadh,Visavadar,582006,21.3789,70.7234,16700,6300,Groundnut;Cotton,748,14.6,alluvial,estimated
+JNG007,Una,Gir Somnath,Una,582007,20.8234,71.0345,32400,9600,Groundnut;Cotton;Banana,788,12.0,alluvial,estimated
+JNG008,Maliya Hatina,Junagadh,Maliya,582008,21.1345,70.5678,14200,5400,Groundnut;Millet,762,13.4,hard_rock,estimated
+JNG009,Veraval,Gir Somnath,Veraval,582009,20.9023,70.3618,112000,12000,Fish;Groundnut,790,11.5,coastal,estimated
+JNG010,Kodinar,Gir Somnath,Kodinar,582010,20.7934,70.7089,44500,11200,Cotton;Groundnut,775,12.8,hard_rock,estimated
+AMR001,Savarkundla,Amreli,Savarkundla,583001,21.3345,71.3234,38500,13400,Groundnut;Castor,610,23.4,hard_rock,estimated
+AMR002,Dhari,Amreli,Dhari,583002,21.3278,71.0134,22800,8900,Groundnut;Cotton,625,21.8,hard_rock,estimated
+AMR003,Lathi,Amreli,Lathi,583003,21.7245,71.3912,10600,4200,Groundnut;Castor,595,24.6,hard_rock,estimated
+AMR004,Bagasara,Amreli,Bagasara,583004,21.4867,70.9523,16900,6700,Groundnut;Millet,618,22.5,alluvial,estimated
+AMR005,Jafrabad,Amreli,Jafrabad,583005,20.8612,71.3756,22300,7800,Groundnut;Fish,645,20.2,coastal,estimated
+AMR006,Khambha,Amreli,Khambha,583006,21.3167,71.6023,12400,4900,Groundnut;Cotton,600,23.8,hard_rock,estimated
+AMR007,Rajula,Amreli,Rajula,583007,21.0412,71.4434,47600,14500,Groundnut;Cotton,638,21.0,alluvial,estimated
+AMR008,Babra,Amreli,Babra,583008,21.8456,71.4567,15800,6100,Castor;Groundnut,585,25.3,hard_rock,estimated
+AMR009,Kukavav,Amreli,Kukavav,583009,21.6734,71.5234,8900,3400,Groundnut;Wheat,592,24.9,hard_rock,estimated
+AMR010,Liliya,Amreli,Liliya,583010,21.7345,71.2678,11200,4600,Groundnut;Castor,590,25.7,hard_rock,estimated
+BHV001,Palitana,Bhavnagar,Palitana,584001,21.5234,71.8234,45600,16000,Wheat;Cotton;Sesame,545,26.8,hard_rock,estimated
+BHV002,Talaja,Bhavnagar,Talaja,584002,21.3445,72.0345,26700,9400,Groundnut;Cotton,558,25.4,alluvial,estimated
+BHV003,Mahuva,Bhavnagar,Mahuva,584003,21.0867,71.7634,52300,17000,Groundnut;Cotton;Banana,562,24.6,alluvial,estimated
+BHV004,Sihor,Bhavnagar,Sihor,584004,21.6991,71.9617,50800,16500,Wheat;Groundnut,550,26.1,alluvial,estimated
+BHV005,Gariadhar,Bhavnagar,Gariadhar,584005,21.5312,71.5734,12600,5100,Groundnut;Cotton,540,27.5,hard_rock,estimated
+SRN001,Dhrangadhra,Surendranagar,Dhrangadhra,587001,22.9891,71.4667,81200,22000,Cotton;Salt;Castor,440,30.2,hard_rock,estimated
+SRN002,Wadhwan,Surendranagar,Wadhwan,587002,22.7034,71.6789,42100,14500,Cotton;Wheat,448,29.6,hard_rock,estimated
+SRN003,Halvad,Surendranagar,Halvad,587003,23.0167,71.1834,36500,13200,Cotton;Castor,430,31.4,hard_rock,estimated
+SRN004,Limbdi,Surendranagar,Limbdi,587004,22.5634,71.8234,32400,11800,Cotton;Groundnut,455,28.9,alluvial,estimated
+SRN005,Chotila,Surendranagar,Chotila,587005,22.4245,71.1923,18700,7200,Cotton;Castor,460,29.1,hard_rock,estimated

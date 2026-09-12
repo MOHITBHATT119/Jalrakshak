@@ -701,9 +701,10 @@ export default function CommunityReports() {
 
   useEffect(() => {
     getVillages().then(d => {
-      setVillages(d.villages);
-      if (d.villages.length) setSelectedVillage(d.villages[0].village_id);
-    });
+      const list = Array.isArray(d?.villages) ? d.villages : [];
+      setVillages(list);
+      if (list.length) setSelectedVillage(list[0].village_id);
+    }).catch(() => {});
   }, []);
 
   const handleGenerate = async () => {

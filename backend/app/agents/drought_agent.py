@@ -4,7 +4,8 @@ Deterministic drought risk calculation based on rainfall deficit,
 groundwater depth, and water demand.
 """
 from app.services.data_service import (
-    get_rainfall_data, get_village, get_water_demand_data, get_data_note
+    get_rainfall_data, get_village, get_water_demand_data, get_data_note,
+    safe_int, safe_float
 )
 from app.agents.groundwater_agent import analyze_groundwater
 
@@ -23,29 +24,46 @@ def assess_drought_risk(village_id: str) -> dict:
     rainfall_score = 0
     rainfall_evidence = []
     if rainfall_data:
-        recent_rainfall = [r for r in rainfall_data if int(r["year"]) >= 2022]
+        recent_rainfall = [r for r in rainfall_data if safe_int(r.get("year")) >= 2022]
         if recent_rainfall:
-            deficits = [float(r["deficit_pct"]) for r in recent_rainfall]
-            avg_deficit = sum(deficits) / len(deficits)
-            if avg_deficit < -50:
-                rainfall_score = 40
-                rainfall_evidence.append(f"Severe rainfall deficit: {avg_deficit:.0f}% below average")
-            elif avg_deficit < -30:
-                rainfall_score = 30
-                rainfall_evidence.append(f"High rainfall deficit: {avg_deficit:.0f}% below average")
-            elif avg_deficit < -15:
-                rainfall_score = 20
-                rainfall_evidence.append(f"Moderate rainfall deficit: {avg_deficit:.0f}% below average")
-            elif avg_deficit < 0:
-                rainfall_score = 10
-                rainfall_evidence.append(f"Below-average rainfall: {avg_deficit:.0f}%")
+            deficits = [
+                safe_float(r.get("deficit_pct"))
+                for r in recent_rainfall
+                if r.get("deficit_pct") is not None and str(r.get("deficit_pct")).strip() != ""
+            ]
+            if deficits:
+                avg_deficit = sum(deficits) / len(deficits)
+                if avg_deficit < -50:
+                    rainfall_score = 40
+                    rainfall_evidence.append(f"Severe rainfall deficit: {avg_deficit:.0f}% below average")
+                elif avg_deficit < -30:
+                    rainfall_score = 30
+                    rainfall_evidence.append(f"High rainfall deficit: {avg_deficit:.0f}% below average")
+                elif avg_deficit < -15:
+                    rainfall_score = 20
+                    rainfall_evidence.append(f"Moderate rainfall deficit: {avg_deficit:.0f}% below average")
+                elif avg_deficit < 0:
+                    rainfall_score = 10
+                    rainfall_evidence.append(f"Below-average rainfall: {avg_deficit:.0f}%")
+                else:
+                    rainfall_score = 0
+                    rainfall_evidence.append("Rainfall near or above average")
             else:
-                rainfall_score = 0
-                rainfall_evidence.append("Rainfall near or above average")
+                # Fallback to village baseline annual rainfall when deficit_pct is absent
+                if village:
+                    ann_rain = safe_int(village.get("annual_rainfall_mm"), 650)
+                    if ann_rain < 450:
+                        rainfall_score = 35
+                        rainfall_evidence.append(f"Low annual rainfall baseline: {ann_rain}mm")
+                    elif ann_rain < 600:
+                        rainfall_score = 20
+                        rainfall_evidence.append(f"Below-average annual rainfall: {ann_rain}mm")
+                    else:
+                        rainfall_score = 10
         else:
             # Use village baseline annual rainfall
             if village:
-                ann_rain = int(village.get("annual_rainfall_mm", 650))
+                ann_rain = safe_int(village.get("annual_rainfall_mm"), 650)
                 if ann_rain < 450:
                     rainfall_score = 35
                     rainfall_evidence.append(f"Low annual rainfall baseline: {ann_rain}mm")
@@ -56,7 +74,7 @@ def assess_drought_risk(village_id: str) -> dict:
                     rainfall_score = 10
     else:
         if village:
-            ann_rain = int(village.get("annual_rainfall_mm", 650))
+            ann_rain = safe_int(village.get("annual_rainfall_mm"), 650)
             if ann_rain < 450:
                 rainfall_score = 30
                 rainfall_evidence.append(f"Low annual rainfall area: {ann_rain}mm")
@@ -68,7 +86,7 @@ def assess_drought_risk(village_id: str) -> dict:
     gw_evidence = []
     severity = gw_result.get("severity", "UNKNOWN")
     trend = gw_result.get("trend", "UNKNOWN")
-    annual_change = gw_result.get("annual_change_m") or 0
+    annual_change = safe_float(gw_result.get("annual_change_m"), 0.0)
 
     if severity == "CRITICAL" or trend == "CRITICAL":
         gw_score = 40
@@ -88,8 +106,8 @@ def assess_drought_risk(village_id: str) -> dict:
     demand_score = 0
     demand_evidence = []
     if demand_data:
-        recent_demand = sorted(demand_data, key=lambda x: int(x["year"]))[-1]
-        deficit = float(recent_demand.get("deficit_mcm", 0))
+        recent_demand = sorted(demand_data, key=lambda x: safe_int(x.get("year")))[-1]
+        deficit = safe_float(recent_demand.get("deficit_mcm"), 0.0)
         if deficit < -80:
             demand_score = 20
             demand_evidence.append(f"Severe water demand deficit: {abs(deficit):.0f} MCM")
@@ -103,8 +121,8 @@ def assess_drought_risk(village_id: str) -> dict:
             demand_evidence.append("Water supply meeting demand")
     else:
         if village:
-            pop = int(village.get("population", 100000))
-            ag_area = int(village.get("agricultural_area_ha", 30000))
+            pop = safe_int(village.get("population"), 100000)
+            ag_area = safe_int(village.get("agricultural_area_ha"), 30000)
             if ag_area > 45000:
                 demand_score = 15
                 demand_evidence.append(f"Large agricultural area: {ag_area}ha creates high demand")

@@ -232,7 +232,8 @@ def test_community_priority():
     assert r.status_code == 200
     data = r.json()
     assert "ranked_villages" in data
-    assert len(data["ranked_villages"]) == 10
+    # With 55 villages seeded, all should be ranked (previously 10)
+    assert len(data["ranked_villages"]) >= 10
     # Should be sorted by priority (highest first)
     scores = [v["priority_score"] for v in data["ranked_villages"]]
     assert scores == sorted(scores, reverse=True)
@@ -393,3 +394,271 @@ def test_invalid_village_id_in_post():
 def test_scenario_invalid_village():
     r = client.post("/api/v1/scenario", json={"village_id": "NOVILLAGE"})
     assert r.status_code == 404
+
+
+# ============================================================
+# Auth Admin Login
+# ============================================================
+
+def test_admin_login_success():
+    """Valid credentials should return access token."""
+    r = client.post("/api/v1/auth/login", json={"username": "admin", "password": "admin@123"})
+    assert r.status_code == 200
+    data = r.json()
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+
+    # Also test fallback password
+    r2 = client.post("/api/v1/auth/login", json={"username": "admin", "password": "jalrakshak2024"})
+    assert r2.status_code == 200
+    assert "access_token" in r2.json()
+
+
+def test_admin_login_invalid():
+    """Invalid password should return 401."""
+    r = client.post("/api/v1/auth/login", json={"username": "admin", "password": "wrongpassword"})
+    assert r.status_code == 401
+    assert "detail" in r.json()
+
+
+# ============================================================
+# Farmer Auth & Admin User Management Tests
+# ============================================================
+
+def test_farmer_signup_and_login():
+    """Farmer signup should create account and return JWT, then allow login."""
+    import uuid
+    uid = uuid.uuid4().hex[:6]
+    unique_phone = f"+91 99999 {uid[:5]}"
+    unique_email = f"farmer_{uid}@khet.in"
+    signup_payload = {
+        "name": "Kishore Bhai Patel",
+        "email": unique_email,
+        "phone": unique_phone,
+        "password": "securefarmerpass123",
+        "village": "Amreli",
+        "district": "Amreli",
+        "land_area_ha": 5.2,
+        "primary_crops": "Cotton, Groundnut"
+    }
+    r = client.post("/api/v1/auth/farmer/signup", json=signup_payload)
+    assert r.status_code == 200
+    data = r.json()
+    assert "access_token" in data
+    assert data["user"]["name"] == "Kishore Bhai Patel"
+    assert data["user"]["role"] == "Farmer"
+    assert "password_hash" not in data["user"]
+
+    # Duplicate signup should fail
+    r_dup = client.post("/api/v1/auth/farmer/signup", json=signup_payload)
+    assert r_dup.status_code == 400
+
+    # Test login with email
+    r_login = client.post("/api/v1/auth/farmer/login", json={
+        "identifier": unique_email,
+        "password": "securefarmerpass123"
+    })
+    assert r_login.status_code == 200
+    token = r_login.json()["access_token"]
+
+    # Test login with phone
+    r_login_phone = client.post("/api/v1/auth/farmer/login", json={
+        "identifier": unique_phone,
+        "password": "securefarmerpass123"
+    })
+    assert r_login_phone.status_code == 200
+
+    # Test farmer /me endpoint
+    r_me = client.get("/api/v1/auth/farmer/me", headers={"Authorization": f"Bearer {token}"})
+    assert r_me.status_code == 200
+    assert r_me.json()["email"] == unique_email
+
+    # Test wrong password
+    r_bad = client.post("/api/v1/auth/farmer/login", json={
+        "identifier": unique_email,
+        "password": "wrongpassword"
+    })
+    assert r_bad.status_code == 401
+
+
+def test_seed_farmer_login():
+    """Pre-seeded demo farmer Ravi Desai should be able to log in with farmer123."""
+    r = client.post("/api/v1/auth/farmer/login", json={
+        "identifier": "ravi.desai@khet.in",
+        "password": "farmer123"
+    })
+    assert r.status_code == 200
+    assert r.json()["user"]["name"] == "Ravi Desai"
+    assert r.json()["user"]["village"] == "Amreli"
+
+
+def test_admin_user_management():
+    """Admin should be able to list users, filter farmers, update status, and manage records."""
+    # Get admin token
+    r_adm = client.post("/api/v1/auth/login", json={"username": "admin", "password": "admin@123"})
+    admin_token = r_adm.json()["access_token"]
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    # List all users
+    r_list = client.get("/api/v1/admin/users", headers=headers)
+    assert r_list.status_code == 200
+    data = r_list.json()
+    assert "users" in data
+    assert data["total_farmers"] >= 2
+
+    # Filter farmers
+    r_farmers = client.get("/api/v1/admin/users?role=Farmer", headers=headers)
+    assert r_farmers.status_code == 200
+    for u in r_farmers.json()["users"]:
+        assert u["role"] == "Farmer"
+
+    # Admin creates new farmer
+    import uuid
+    uid = uuid.uuid4().hex[:6]
+    test_email = f"suresh_{uid}@farm.in"
+    r_create = client.post("/api/v1/admin/users", headers=headers, json={
+        "name": "Suresh Bhai",
+        "email": test_email,
+        "phone": f"+91 98980 {uid[:5]}",
+        "role": "Farmer",
+        "village": "Rajkot",
+        "district": "Rajkot",
+        "land_area_ha": 8.0,
+        "primary_crops": "Wheat",
+        "status": "Active"
+    })
+    assert r_create.status_code == 201
+    new_id = r_create.json()["id"]
+
+    # Toggle status to Suspended
+    r_status = client.patch(f"/api/v1/admin/users/{new_id}/status", headers=headers, json={"status": "Suspended"})
+    assert r_status.status_code == 200
+    assert r_status.json()["status"] == "Suspended"
+
+    # Suspended user login should be blocked
+    r_login_susp = client.post("/api/v1/auth/farmer/login", json={
+        "identifier": test_email,
+        "password": "farmer123"
+    })
+    assert r_login_susp.status_code == 403
+
+    # Delete user
+    r_del = client.delete(f"/api/v1/admin/users/{new_id}", headers=headers)
+    assert r_del.status_code == 200
+
+
+# ============================================================
+# Edge Cases & Null-Safety Tests
+# ============================================================
+
+def test_null_safety_in_drought_agent():
+    """Drought risk calculation must not crash when deficit_pct or fields are None."""
+    from unittest.mock import patch
+    from app.agents.drought_agent import assess_drought_risk
+
+    mock_rain = [
+        {"year": 2023, "month": 6, "deficit_pct": None, "rainfall_mm": None},
+        {"year": 2022, "month": 7, "deficit_pct": -25.0, "rainfall_mm": 120.0},
+    ]
+    with patch("app.agents.drought_agent.get_rainfall_data", return_value=mock_rain):
+        res = assess_drought_risk(TEST_VILLAGE)
+        assert res is not None
+        assert 0 <= res["risk_score"] <= 100
+
+
+def test_null_safety_in_groundwater_agent():
+    """Groundwater analysis must not crash when timeseries has None years or months."""
+    from unittest.mock import patch
+    from app.agents.groundwater_agent import analyze_groundwater
+
+    mock_series = [
+        {"year": "2022", "month": "6", "depth_m": 18.5, "quality": "good"},
+        {"year": None, "month": None, "depth_m": None, "quality": None},
+        {"year": 2023, "month": 6, "depth_m": 20.0, "quality": "moderate"},
+    ]
+    with patch("app.agents.groundwater_agent.get_village_groundwater_series", return_value=mock_series):
+        res = analyze_groundwater(TEST_VILLAGE)
+        assert res is not None
+        assert res["current_depth_m"] >= 0
+
+
+def test_null_safety_in_water_budget_agent():
+    """Water budget calculation must not crash when demand/supply numbers are None."""
+    from unittest.mock import patch
+    from app.agents.water_budget_agent import calculate_water_budget
+
+    mock_demand = [{
+        "year": 2023,
+        "domestic_demand_mcm": None,
+        "agricultural_demand_mcm": None,
+        "industrial_demand_mcm": None,
+        "total_demand_mcm": None,
+        "available_supply_mcm": None,
+        "deficit_mcm": None,
+    }]
+    with patch("app.agents.water_budget_agent.get_water_demand_data", return_value=mock_demand):
+        res = calculate_water_budget(TEST_VILLAGE)
+        assert res is not None
+        assert "supply" in res
+        assert "demand" in res
+        assert "balance" in res
+
+
+def test_null_safety_in_crop_and_recharge_agents():
+    """Crop and recharge agents must handle None values in optional columns safely."""
+    from unittest.mock import patch
+    from app.agents.crop_agent import get_crop_advice
+    from app.agents.recharge_agent import get_recharge_advice
+
+    mock_crops = [{
+        "crop_id": "C_TEST",
+        "name": "Test Crop",
+        "season": "kharif",
+        "suitability_saurashtra": "high",
+        "drought_tolerance": "high",
+        "water_requirement_mm": None,
+        "water_saving_vs_cotton_pct": None,
+    }]
+    with patch("app.agents.crop_agent.get_crops_data", return_value=mock_crops):
+        res = get_crop_advice(TEST_VILLAGE)
+        assert res is not None
+        assert "recommendations" in res
+
+    mock_recharge = [{
+        "structure_type": "check_dam",
+        "count": None,
+        "estimated_recharge_mcm": None,
+    }]
+    with patch("app.agents.recharge_agent.get_recharge_data", return_value=mock_recharge):
+        res_rec = get_recharge_advice(TEST_VILLAGE)
+        assert res_rec is not None
+        assert "recommendations" in res_rec
+
+
+def test_dynamic_data_notes_across_agents():
+    """All agent endpoints must return dynamic data_note reflecting village data status."""
+    r_gw = client.get(f"/api/v1/villages/{TEST_VILLAGE}/groundwater")
+    assert "data_note" in r_gw.json()
+
+    r_health = client.get(f"/api/v1/villages/{TEST_VILLAGE}/water-health")
+    assert "data_note" in r_health.json()
+
+    r_crop = client.post("/api/v1/crop-advice", json={"village_id": TEST_VILLAGE})
+    assert "data_note" in r_crop.json()
+
+    r_rec = client.post("/api/v1/recharge-advice", json={"village_id": TEST_VILLAGE})
+    assert "data_note" in r_rec.json()
+
+    r_comm = client.get("/api/v1/community-priority")
+    assert "data_note" in r_comm.json()
+
+
+def test_data_dir_and_db_resolution():
+    """DATA_DIR and DB_PATH must be valid paths and resolve to existing directories."""
+    from app.services.database import DATA_DIR, DB_PATH
+    assert os.path.isdir(DATA_DIR)
+    assert os.path.exists(os.path.join(DATA_DIR, "villages.csv"))
+    assert os.path.basename(DB_PATH) == "jalrakshak.db"
+
+
+

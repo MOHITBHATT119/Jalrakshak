@@ -378,7 +378,7 @@ export default function WhatIfSimulator({ selectedVillage, setSelectedVillage, l
   const [activePreset, setActivePreset] = useState<string|null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { getVillages().then(r => setVillages(r.villages)); }, []);
+  useEffect(() => { getVillages().then(r => setVillages(Array.isArray(r?.villages) ? r.villages : [])).catch(() => {}); }, []);
 
   /* ── presets ── */
   const PRESETS = [

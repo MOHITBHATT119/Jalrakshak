@@ -79,13 +79,14 @@ export default function HydroAtlas({ selectedVillage, setSelectedVillage, lang }
 
   useEffect(() => {
     getVillages().then(r => {
-      setVillages(r.villages);
+      const list: Village[] = Array.isArray(r?.villages) ? r.villages : [];
+      setVillages(list);
       setLoading(false);
-      r.villages.forEach((v: Village) => {
-        getWaterHealth(v.village_id).then(h => setHealthData(prev => ({ ...prev, [v.village_id]: h })));
-        getDroughtRisk(v.village_id).then(d => setDroughtData(prev => ({ ...prev, [v.village_id]: d })));
+      list.forEach((v: Village) => {
+        getWaterHealth(v.village_id).then(h => setHealthData(prev => ({ ...prev, [v.village_id]: h }))).catch(() => {});
+        getDroughtRisk(v.village_id).then(d => setDroughtData(prev => ({ ...prev, [v.village_id]: d }))).catch(() => {});
       });
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const tv = tooltip?.village ?? null;

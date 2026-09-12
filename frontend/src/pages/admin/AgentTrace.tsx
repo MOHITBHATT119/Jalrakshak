@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   BrainCircuit, Play, Zap, CheckCircle2, Clock, AlertTriangle, Loader2,
   ChevronDown, ChevronUp, Database, Cpu, BarChart2, Droplet, CloudRain,
@@ -176,6 +177,7 @@ const delay = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function AgentTrace() {
+  const { t } = useLanguage();
   const nav = useNavigate();
 
   const [villages, setVillages] = useState<Village[]>([]);
@@ -196,8 +198,9 @@ export default function AgentTrace() {
   // Load villages & health on mount
   useEffect(() => {
     getVillages().then(d => {
-      setVillages(d.villages);
-      if (d.villages.length > 0) setSelectedVillageId(d.villages[0].village_id);
+      const list = Array.isArray(d?.villages) ? d.villages : [];
+      setVillages(list);
+      if (list.length > 0) setSelectedVillageId(list[0].village_id);
     }).catch(() => {});
     getHealth().then(h => {
       setBackendHealth(h);
@@ -531,7 +534,7 @@ export default function AgentTrace() {
             <BrainCircuit size={22} color="#8b5cf6" />
           </div>
           <div>
-            <h1 className="at-h1">AI Agent Trace &amp; Execution</h1>
+            <h1 className="at-h1">{t('agentTrace')}</h1>
             <p className="at-subtitle">
               Real-time view of how JalRakshak analyzes water-risk decisions
               <span className="at-trace-id">Trace: {traceId}</span>

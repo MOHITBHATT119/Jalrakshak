@@ -265,7 +265,7 @@ export default function Reports({ selectedVillage, setSelectedVillage, lang, dem
   const t = (en: string, gu: string) => lang === 'gu' ? gu : en;
 
   useEffect(() => {
-    getVillages().then(r => setVillages(r.villages));
+    getVillages().then(r => setVillages(Array.isArray(r?.villages) ? r.villages : [])).catch(() => {});
   }, []);
 
   // cleanup timers on unmount

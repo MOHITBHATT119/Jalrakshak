@@ -57,7 +57,7 @@ const T = {
   demo:            { en: 'Demo', gu: 'ડેમો' },
   // Sidebar
   newChat:         { en: 'New Chat', gu: 'નવી વાત' },
-  newConversation: { en: 'New Conversation', gu: 'નવી વાતચીત' },
+  newConversation: { en: 'JalRakshak Water Copilot', gu: 'જળરક્ષક વોટર કો-પાઇલટ' },
   today:           { en: 'Today', gu: 'આજે' },
   previous:        { en: 'Previous', gu: 'અગાઉની' },
   noConversations: { en: 'No conversations yet', gu: 'હજુ કોઈ વાતચીત નથી' },
@@ -319,7 +319,7 @@ export default function WaterCopilot({ selectedVillage, setSelectedVillage, lang
   const messages = activeConv?.messages || [];
 
   // Load villages
-  useEffect(() => { getVillages().then(r => setVillages(r.villages)); }, []);
+  useEffect(() => { getVillages().then(r => setVillages(Array.isArray(r?.villages) ? r.villages : [])).catch(() => {}); }, []);
 
   // Load context when village changes
   useEffect(() => {
@@ -379,7 +379,7 @@ export default function WaterCopilot({ selectedVillage, setSelectedVillage, lang
       c.id === id ? {
         ...c,
         messages: msgs,
-        title: msgs.find(m => m.role === 'user')?.text.slice(0, 40) || c.title,
+        title: c.title || t('newConversation', lang),
       } : c
     ));
   };
@@ -574,6 +574,37 @@ export default function WaterCopilot({ selectedVillage, setSelectedVillage, lang
             display: 'flex', flexDirection: 'column', background: 'rgba(10,15,28,0.97)',
             ...(isMobile ? { position: 'absolute', top: 0, left: 0, bottom: 0, zIndex: 210 } : {}),
           }}>
+            {/* ── Left Sidebar Header ── */}
+            <div style={{
+              padding: '12px 14px 10px',
+              borderBottom: '1px solid var(--border-glass)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'rgba(255, 255, 255, 0.02)',
+              flexShrink: 0,
+            }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: 7,
+                background: 'linear-gradient(135deg, #1d4ed8, #7c3aed)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <Bot size={14} color="#fff" />
+              </div>
+              <div style={{
+                fontWeight: 800,
+                fontSize: '0.82rem',
+                color: 'var(--text-main)',
+                letterSpacing: '-0.01em',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>
+                {t('appTitle', lang)}
+              </div>
+            </div>
+
             <div style={{ padding: '10px 10px 6px', borderBottom: '1px solid var(--border-glass)', flexShrink: 0 }}>
               <button className="cp-new-chat-btn" onClick={newConversation} style={{
                 width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   getDataStatus, uploadDataCsv, resetDataTable, previewDataTable,
   DataStatusResponse, DataTableStat,
@@ -325,6 +326,7 @@ function TableCard({ tableKey, meta, stat, onRefresh }: {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function DataSources() {
+  const { t } = useLanguage();
   const [status, setStatus]   = useState<DataStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -364,7 +366,7 @@ export default function DataSources() {
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)' }}>
-              Data Sources &amp; Management
+              {t('dataSources')}
             </h1>
             <p style={{ margin: '4px 0 0', fontSize: '0.83rem', color: 'var(--text-muted)' }}>
               Upload real government data to switch from demo to live mode. All analysis agents update instantly.
@@ -375,7 +377,7 @@ export default function DataSources() {
           onClick={fetchStatus}
           style={actionBtn('#3b82f6')}
         >
-          <RefreshCw size={14} className={loading ? 'ds-spin' : ''} /> Refresh
+          <RefreshCw size={14} className={loading ? 'ds-spin' : ''} /> {t('refresh')}
         </button>
       </div>
 
@@ -431,7 +433,15 @@ export default function DataSources() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
           {Object.entries(TABLE_META).map(([key, meta]) => {
             const statsKey = key.replace('-', '_');
-            const stat = status?.tables[statsKey] ?? { total_rows: 0, live_rows: 0, demo_rows: 0, has_live: false, last_updated: null };
+            const stat: DataTableStat = status?.tables[statsKey] ?? {
+              total_rows: 0,
+              live_rows: 0,
+              estimated_rows: 0,
+              demo_rows: 0,
+              has_live: false,
+              has_estimated: false,
+              last_updated: null,
+            };
             return (
               <TableCard
                 key={key}

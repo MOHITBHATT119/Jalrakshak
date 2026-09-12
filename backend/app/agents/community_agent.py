@@ -2,7 +2,7 @@
 Community Priority Agent
 Ranks villages by water stress urgency.
 """
-from app.services.data_service import get_all_villages
+from app.services.data_service import get_all_villages, get_data_note
 from app.agents.water_health_agent import calculate_water_health_score
 from app.agents.drought_agent import assess_drought_risk
 
@@ -69,7 +69,7 @@ def rank_communities() -> dict:
         "medium_count": len(medium),
         "low_count": len(low),
         "ranked_villages": ranked,
-        "data_note": "Synthetic demonstration data. Not official government measurements.",
+        "data_note": get_data_note(),
     }
 
 

@@ -3,7 +3,7 @@ import {
   Settings2, BrainCircuit, Database, Shield, Server,
   CheckCircle2, XCircle, AlertTriangle, RefreshCw,
   KeyRound, Terminal, Cpu, Zap, Globe, Info,
-  Moon, Sun, Bell, Lock,
+  Moon, Sun, Bell, Lock, Bot, Check,
 } from 'lucide-react';
 import { getHealth } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -94,6 +94,23 @@ export default function Settings({ lang }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(false);
   const { theme, toggleTheme } = useTheme();
+
+  const [watsonConfig, setWatsonConfig] = useState(() => {
+    try {
+      const raw = localStorage.getItem('jalrakshak_watson_config');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return { integrationID: '', region: 'us-south', serviceInstanceID: '', useOfficialScript: false };
+  });
+  const [watsonSaved, setWatsonSaved] = useState(false);
+
+  const saveWatsonConfig = () => {
+    try {
+      localStorage.setItem('jalrakshak_watson_config', JSON.stringify(watsonConfig));
+      setWatsonSaved(true);
+      setTimeout(() => setWatsonSaved(false), 2000);
+    } catch {}
+  };
 
   const fetchHealth = () => {
     setLoading(true); setError(false);
@@ -229,7 +246,7 @@ export default function Settings({ lang }: Props) {
             {[
               { step: '1', icon: <Terminal size={14} />, title: 'Open .env file', desc: 'Find the .env file in the project root directory.' },
               { step: '2', icon: <KeyRound size={14} />, title: 'Add API Key', desc: <>Set <code style={{ background: 'var(--bg-card-hover)', padding: '1px 5px', borderRadius: 4, fontSize: '0.78rem', color: '#3b82f6', fontFamily: 'monospace' }}>WATSONX_API_KEY=your_api_key_here</code></> },
-              { step: '3', icon: <Server size={14} />, title: 'Restart backend', desc: 'Run start_backend.bat (or restart the Python server).' },
+              { step: '3', icon: <Server size={14} />, title: 'Restart backend', desc: 'Restart the Python FastAPI server.' },
             ].map(({ step, icon, title, desc }) => (
               <div key={step} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <div style={{
@@ -248,6 +265,78 @@ export default function Settings({ lang }: Props) {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* ── IBM WATSON ASSISTANT CHATBOT ─────────────────────────────────── */}
+        <div style={{ ...card, gridColumn: '1 / -1' }}>
+          <SectionTitle icon={<Bot size={16} />} label="IBM Watson Assistant Web Chatbot" />
+          <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              JalRakshak AI includes a floating <strong>IBM Watson Assistant</strong> chatbot at the bottom-right corner of every screen. By default, it connects to our integrated IBM Granite intelligence engine. You can also connect your live <strong>IBM Cloud Watson Assistant</strong> instance below.
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
+                  Watson Integration ID:
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 5e0b6d21-7649-4458-9be5-..."
+                  value={watsonConfig.integrationID}
+                  onChange={e => setWatsonConfig({ ...watsonConfig, integrationID: e.target.value })}
+                  style={{
+                    width: '100%', padding: '8px 12px', borderRadius: 8,
+                    background: 'var(--bg-dark)', color: 'var(--text-main)',
+                    border: '1px solid var(--border-glass)', fontSize: '0.82rem',
+                    fontFamily: 'monospace', boxSizing: 'border-box', outline: 'none',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
+                  Watson Service Instance ID:
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 43a0d5c8-52c6-4866-9311-..."
+                  value={watsonConfig.serviceInstanceID}
+                  onChange={e => setWatsonConfig({ ...watsonConfig, serviceInstanceID: e.target.value })}
+                  style={{
+                    width: '100%', padding: '8px 12px', borderRadius: 8,
+                    background: 'var(--bg-dark)', color: 'var(--text-main)',
+                    border: '1px solid var(--border-glass)', fontSize: '0.82rem',
+                    fontFamily: 'monospace', boxSizing: 'border-box', outline: 'none',
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.8rem' }}>
+                <input
+                  type="checkbox"
+                  checked={watsonConfig.useOfficialScript}
+                  onChange={e => setWatsonConfig({ ...watsonConfig, useOfficialScript: e.target.checked })}
+                />
+                <span>Load official IBM Cloud web-chat script (requires valid Integration ID)</span>
+              </label>
+
+              <button
+                onClick={saveWatsonConfig}
+                style={{
+                  padding: '8px 20px', borderRadius: 8, border: 'none',
+                  background: '#0f62fe', color: '#fff', fontWeight: 700,
+                  fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                  transition: 'background 0.2s',
+                }}
+              >
+                {watsonSaved ? <Check size={14} /> : null}
+                {watsonSaved ? 'Saved Settings!' : 'Save Watson Settings'}
+              </button>
+            </div>
           </div>
         </div>
 

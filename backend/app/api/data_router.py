@@ -1,12 +1,15 @@
 """
 Data Management API — upload CSVs, manual entry, reset, status.
 All write operations mark rows as data_source='live'.
+Write routes require admin JWT (Authorization: Bearer <token>).
 """
 import csv
 import io
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from pydantic import BaseModel
+from app.core.security import require_admin
+from app.schemas.responses import DataStatusResponse
 from app.services.database import (
     get_table_stats,
     upsert_village,
@@ -26,7 +29,7 @@ data_router = APIRouter(prefix="/data", tags=["data-management"])
 # STATUS
 # ─────────────────────────────────────────────────────────────────────────────
 
-@data_router.get("/status")
+@data_router.get("/status", response_model=DataStatusResponse)
 def data_status():
     """Overall data source status — row counts, live vs demo per table."""
     stats = get_table_stats()
@@ -73,7 +76,7 @@ def _coerce_row(row: dict, float_cols: list, int_cols: list) -> dict:
     return out
 
 
-@data_router.post("/upload/villages")
+@data_router.post("/upload/villages", dependencies=[Depends(require_admin)])
 async def upload_villages(file: UploadFile = File(...)):
     """
     Upload villages.csv.
@@ -91,7 +94,7 @@ async def upload_villages(file: UploadFile = File(...)):
     return {"message": f"Uploaded {len(rows)} village records.", "count": len(rows)}
 
 
-@data_router.post("/upload/groundwater")
+@data_router.post("/upload/groundwater", dependencies=[Depends(require_admin)])
 async def upload_groundwater(file: UploadFile = File(...)):
     """
     Upload groundwater.csv.
@@ -111,7 +114,7 @@ async def upload_groundwater(file: UploadFile = File(...)):
     return {"message": f"Uploaded {len(coerced)} groundwater records.", "count": len(coerced)}
 
 
-@data_router.post("/upload/rainfall")
+@data_router.post("/upload/rainfall", dependencies=[Depends(require_admin)])
 async def upload_rainfall(file: UploadFile = File(...)):
     """
     Upload rainfall.csv.
@@ -132,7 +135,7 @@ async def upload_rainfall(file: UploadFile = File(...)):
     return {"message": f"Uploaded {len(coerced)} rainfall records.", "count": len(coerced)}
 
 
-@data_router.post("/upload/water-demand")
+@data_router.post("/upload/water-demand", dependencies=[Depends(require_admin)])
 async def upload_water_demand(file: UploadFile = File(...)):
     """
     Upload water_demand.csv.
@@ -156,7 +159,7 @@ async def upload_water_demand(file: UploadFile = File(...)):
     return {"message": f"Uploaded {len(coerced)} water demand records.", "count": len(coerced)}
 
 
-@data_router.post("/upload/recharge")
+@data_router.post("/upload/recharge", dependencies=[Depends(require_admin)])
 async def upload_recharge(file: UploadFile = File(...)):
     """
     Upload recharge.csv.
@@ -209,19 +212,19 @@ class WaterDemandEntry(BaseModel):
     deficit_mcm:              float
 
 
-@data_router.post("/entry/groundwater")
+@data_router.post("/entry/groundwater", dependencies=[Depends(require_admin)])
 def add_groundwater_entry(entry: GroundwaterEntry):
     upsert_groundwater_rows([entry.model_dump()])
     return {"message": "Groundwater entry saved.", "data_source": "live"}
 
 
-@data_router.post("/entry/rainfall")
+@data_router.post("/entry/rainfall", dependencies=[Depends(require_admin)])
 def add_rainfall_entry(entry: RainfallEntry):
     upsert_rainfall_rows([entry.model_dump()])
     return {"message": "Rainfall entry saved.", "data_source": "live"}
 
 
-@data_router.post("/entry/water-demand")
+@data_router.post("/entry/water-demand", dependencies=[Depends(require_admin)])
 def add_water_demand_entry(entry: WaterDemandEntry):
     upsert_water_demand_rows([entry.model_dump()])
     return {"message": "Water demand entry saved.", "data_source": "live"}
@@ -233,7 +236,7 @@ def add_water_demand_entry(entry: WaterDemandEntry):
 
 VALID_TABLES = {"villages","groundwater","rainfall","water_demand","recharge","crops"}
 
-@data_router.delete("/reset/{table}")
+@data_router.delete("/reset/{table}", dependencies=[Depends(require_admin)])
 def reset_table(table: str):
     """Delete all live rows for a table — reverts to demo/CSV seed data."""
     if table not in VALID_TABLES:

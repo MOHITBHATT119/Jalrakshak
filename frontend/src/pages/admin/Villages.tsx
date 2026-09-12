@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   MapPin, Plus, Search, RefreshCw, Eye, Pencil, Trash2,
   X, AlertCircle, CheckCircle, Waves, Droplet,
@@ -287,6 +288,7 @@ function ScoreRing({ score, size = 56 }: { score: number; size?: number }) {
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function Villages() {
   const nav = useNavigate();
+  const { t } = useLanguage();
 
   // Backend village list
   const [apiVillages, setApiVillages]   = useState<VillageRecord[]>([]);
@@ -331,7 +333,7 @@ export default function Villages() {
     setLoading(true);
     getVillages()
       .then(d => {
-        const records = d.villages.map(v => mergeExtra(v, extra));
+        const records = (Array.isArray(d?.villages) ? d.villages : []).map(v => mergeExtra(v, extra));
         setApiVillages(records);
 
         // ── Background: fetch real drought risk for every village ──────────
@@ -836,7 +838,7 @@ export default function Villages() {
             <MapPin size={20} color="#3b82f6" />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800 }}>Village Management</h1>
+            <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800 }}>{t('villages')}</h1>
             <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '0.83rem' }}>
               Manage villages and monitor their water-risk status.
               {isDemo && <span style={{ marginLeft: 8, fontSize: '0.72rem', padding: '2px 8px', borderRadius: 20, fontWeight: 800, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b' }}>Demo Mode</span>}
@@ -847,7 +849,7 @@ export default function Villages() {
           onClick={() => { setShowAdd(true); }}
           style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
         >
-          <Plus size={16} /> Add Village
+          <Plus size={16} /> {t('addVillage')}
         </button>
       </div>
 
@@ -856,11 +858,11 @@ export default function Villages() {
       ══════════════════════════════════════════════════════════════════════ */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 18 }}>
         {[
-          { label: 'Total Villages',    val: counts.total,      color: '#3b82f6' },
-          { label: 'Critical Risk',     val: counts.critical,   color: '#ef4444' },
-          { label: 'High Risk',         val: counts.high,       color: '#f97316' },
-          { label: 'Stable',            val: counts.stable,     color: '#22c55e' },
-          { label: 'Total Households',  val: fmtNum(counts.households), color: '#8b5cf6' },
+          { label: t('villages'),    val: counts.total,      color: '#3b82f6' },
+          { label: t('critical'),    val: counts.critical,   color: '#ef4444' },
+          { label: t('high'),        val: counts.high,       color: '#f97316' },
+          { label: t('low'),         val: counts.stable,     color: '#22c55e' },
+          { label: t('households'),  val: fmtNum(counts.households), color: '#8b5cf6' },
         ].map(k => (
           <div key={k.label} style={{ ...cardS, borderLeft: `3px solid ${k.color}`, padding: '14px 18px' }}>
             <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{k.label}</div>
@@ -912,7 +914,7 @@ export default function Villages() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', minWidth: 1000 }}>
               <thead>
                 <tr style={{ background: 'var(--bg-card-hover)', borderBottom: '1px solid var(--border-glass)' }}>
-                  {['Village', 'District / Taluka', 'Population', 'Households', 'Groundwater', 'Drought Risk', 'Water Health', 'Status', 'Actions'].map((h, i) => (
+                  {[t('village'), t('district'), t('population'), t('households'), t('gwAvgDepth'), t('droughtRisk'), t('waterHealth'), t('status'), t('recommendedAction')].map((h, i) => (
                     <th key={h} style={{ padding: '12px 16px', textAlign: i >= 7 ? 'center' : 'left', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>

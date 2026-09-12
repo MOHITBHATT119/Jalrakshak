@@ -3,7 +3,10 @@ Groundwater Depletion Monitoring Agent
 Analyzes groundwater trends using deterministic calculations.
 """
 from typing import Optional
-from app.services.data_service import get_village_groundwater_series, get_village, get_data_note
+from app.services.data_service import (
+    get_village_groundwater_series, get_village, get_data_note,
+    safe_int, safe_float
+)
 
 
 def analyze_groundwater(village_id: str) -> dict:
@@ -17,21 +20,22 @@ def analyze_groundwater(village_id: str) -> dict:
     if not series:
         return _unknown_result(village_id)
 
-    # Sort by year, month
-    series_sorted = sorted(series, key=lambda x: (int(x["year"]), int(x["month"])))
+    # Sort by year, month using safe_int
+    series_sorted = sorted(series, key=lambda x: (safe_int(x.get("year")), safe_int(x.get("month"))))
 
     # Get most recent depth
     latest = series_sorted[-1]
-    current_depth = float(latest["depth_m"])
+    current_depth = safe_float(latest.get("depth_m"), 0.0)
 
     # Get depth from 5 years ago or earliest available
     earliest = series_sorted[0]
-    historical_depth = float(earliest["depth_m"])
+    historical_depth = safe_float(earliest.get("depth_m"), current_depth)
 
     # Get annual change (most recent year vs prior year, same month)
-    recent_same_month = [s for s in series_sorted if int(s["month"]) == int(latest["month"])]
+    latest_month = safe_int(latest.get("month"))
+    recent_same_month = [s for s in series_sorted if safe_int(s.get("month")) == latest_month]
     if len(recent_same_month) >= 2:
-        prior_year_depth = float(recent_same_month[-2]["depth_m"])
+        prior_year_depth = safe_float(recent_same_month[-2].get("depth_m"), current_depth)
         annual_change = current_depth - prior_year_depth
     else:
         annual_change = 0.0
@@ -61,9 +65,9 @@ def analyze_groundwater(village_id: str) -> dict:
     # Build timeseries for charts
     timeseries = [
         {
-            "year": int(s["year"]),
-            "month": int(s["month"]),
-            "depth_m": float(s["depth_m"]),
+            "year": safe_int(s.get("year")),
+            "month": safe_int(s.get("month")),
+            "depth_m": safe_float(s.get("depth_m")),
             "quality": s.get("quality", "unknown"),
         }
         for s in series_sorted

@@ -209,7 +209,7 @@ export default function GroundwaterExplorer({
 
   useEffect(() => {
     getVillages()
-      .then(r => setVillages(r.villages))
+      .then(r => setVillages(Array.isArray(r?.villages) ? r.villages : []))
       .catch(() => setVillages([]));
   }, []);
 

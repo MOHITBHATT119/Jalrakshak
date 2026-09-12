@@ -141,7 +141,7 @@ export default function Dashboard({ selectedVillage, setSelectedVillage, mode, l
   const tr = (k: string) => t(k, lang);
 
   useEffect(() => {
-    getVillages().then(r => setVillages(r.villages));
+    getVillages().then(r => setVillages(Array.isArray(r?.villages) ? r.villages : [])).catch(() => {});
   }, []);
 
   useEffect(() => {

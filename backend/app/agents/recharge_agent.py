@@ -2,7 +2,10 @@
 Recharge Structure Planning Agent
 Recommends groundwater recharge interventions based on available data.
 """
-from app.services.data_service import get_village, get_recharge_data, get_rainfall_data
+from app.services.data_service import (
+    get_village, get_recharge_data, get_rainfall_data, get_data_note,
+    safe_int, safe_float
+)
 from app.agents.groundwater_agent import analyze_groundwater
 
 
@@ -16,9 +19,9 @@ def get_recharge_advice(village_id: str) -> dict:
     existing_recharge = get_recharge_data(village_id)
     rainfall_data = get_rainfall_data(village_id)
 
-    aquifer_type = village.get("aquifer_type", "alluvial") if village else "alluvial"
-    annual_rainfall = int(village.get("annual_rainfall_mm", 600)) if village else 600
-    ag_area_ha = int(village.get("agricultural_area_ha", 30000)) if village else 30000
+    aquifer_type = (village.get("aquifer_type") or "alluvial") if village else "alluvial"
+    annual_rainfall = safe_int(village.get("annual_rainfall_mm"), 600) if village else 600
+    ag_area_ha = safe_int(village.get("agricultural_area_ha"), 30000) if village else 30000
 
     severity = gw_result.get("severity", "MODERATE")
     trend = gw_result.get("trend", "DECLINING")
@@ -27,7 +30,7 @@ def get_recharge_advice(village_id: str) -> dict:
     existing_counts = {}
     for r in existing_recharge:
         st = r.get("structure_type", "unknown")
-        existing_counts[st] = existing_counts.get(st, 0) + int(r.get("count", 0))
+        existing_counts[st] = existing_counts.get(st, 0) + safe_int(r.get("count"), 0)
 
     recommendations = []
 
@@ -124,5 +127,5 @@ def get_recharge_advice(village_id: str) -> dict:
         "total_potential_recharge_mcm": round(total_potential, 1),
         "existing_structures": existing_counts,
         "disclaimer": "Preliminary AI recommendation. Field survey and engineering validation required.",
-        "data_note": "Synthetic demonstration data. Not official government measurements.",
+        "data_note": get_data_note(village_id),
     }

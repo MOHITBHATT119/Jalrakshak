@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   LayoutDashboard, RefreshCw, Waves, CloudRain, TrendingDown,
   TrendingUp, Minus, AlertTriangle, Zap, BrainCircuit,
@@ -507,6 +508,7 @@ function RegionalWaterSituation({ villages, dataMode, nav }: {
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const nav = useNavigate();
+  const { t } = useLanguage();
 
   const [apiVillages,  setApiVillages]  = useState<DashVillage[]>([]);
   const [health,       setHealth]       = useState<HealthResponse | null>(null);
@@ -623,7 +625,7 @@ export default function AdminDashboard() {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh', flexDirection:'column', gap:12, color:'var(--text-muted)' }}>
         <Loader2 size={32} style={{ animation:'spin 1s linear infinite' }} color="#3b82f6" />
-        <span style={{ fontSize:'0.9rem' }}>Loading regional water intelligence…</span>
+        <span style={{ fontSize:'0.9rem' }}>{t('loading')}</span>
         <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
       </div>
     );
@@ -639,7 +641,7 @@ export default function AdminDashboard() {
             <LayoutDashboard size={20} color="#3b82f6" />
           </div>
           <div>
-            <h1 style={{ margin:0, fontSize:'1.3rem', fontWeight:800 }}>Regional Water Intelligence</h1>
+            <h1 style={{ margin:0, fontSize:'1.3rem', fontWeight:800 }}>{t('regionalWaterIntelligence')}</h1>
             <p style={{ margin:'3px 0 0', fontSize:'0.82rem', color:'var(--text-muted)' }}>
               Saurashtra region · {villages.length} districts monitored
               {enriching && <span style={{ color:'#3b82f6', marginLeft:8 }}><Loader2 size={11} style={{ display:'inline', animation:'spin 1s linear infinite', verticalAlign:'middle' }}/> Enriching data…</span>}
@@ -651,7 +653,7 @@ export default function AdminDashboard() {
           <DataBadge mode={dataMode} />
           {error && <span style={{ fontSize:'0.72rem', color:'#f59e0b', display:'flex', alignItems:'center', gap:4 }}><AlertTriangle size={11}/>Backend offline — seed data shown</span>}
           <button onClick={loadData} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:8, border:'1px solid var(--border-glass)', background:'transparent', color:'var(--text-muted)', fontSize:'0.82rem', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-            <RefreshCw size={13} /> Refresh
+            <RefreshCw size={13} /> {t('refresh')}
           </button>
         </div>
       </div>
@@ -660,13 +662,13 @@ export default function AdminDashboard() {
       {kpis && (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px,1fr))', gap:12, marginBottom:18 }}>
           {([
-            { label:'Water Health Score',  val:`${kpis.avgHealth}/100`,   sub: kpis.avgHealth >= 60 ? 'MODERATE' : kpis.avgHealth >= 40 ? 'STRESSED' : 'CRITICAL', color: healthColor(kpis.avgHealth), path:'/admin/groundwater' },
-            { label:'Districts Monitored', val: kpis.total,               sub:`${kpis.declining} GW declining`,   color:'#3b82f6',   path:'/admin/villages' },
-            { label:'Critical Districts',  val: kpis.critical,            sub:`${kpis.highRisk} high risk`,        color:'#ef4444',   path:'/admin/villages' },
-            { label:'GW Avg Depth',        val:`${kpis.avgGW}m`,         sub:`${kpis.avgChange > 0 ? '+' : ''}${kpis.avgChange}m/yr`, color: kpis.avgChange > 1 ? '#ef4444' : '#f59e0b', path:'/admin/groundwater' },
-            { label:'Drought Risk',        val: kpis.critical > 0 ? 'CRITICAL' : kpis.highRisk > 2 ? 'HIGH' : 'MEDIUM', sub:`${kpis.critical + kpis.highRisk} affected`, color: riskColor(kpis.critical > 0 ? 'CRITICAL' : kpis.highRisk > 2 ? 'HIGH' : 'MEDIUM'), path:'/admin/drought' },
-            { label:'Rainfall Anomaly',    val:`${kpis.avgRain}%`,       sub:'vs 30-yr baseline',                 color: kpis.avgRain < -15 ? '#ef4444' : '#f59e0b', path:'/admin/drought' },
-            { label:'Recharge Potential',  val:`${kpis.recharge} districts`, sub:'favourable conditions',         color:'#22c55e',   path:'/admin/recharge-planner' },
+            { label: t('waterHealthScore'),   val:`${kpis.avgHealth}/100`,   sub: kpis.avgHealth >= 60 ? 'MODERATE' : kpis.avgHealth >= 40 ? 'STRESSED' : 'CRITICAL', color: healthColor(kpis.avgHealth), path:'/admin/groundwater' },
+            { label: t('districtsMonitored'), val: kpis.total,               sub:`${kpis.declining} GW declining`,   color:'#3b82f6',   path:'/admin/villages' },
+            { label: t('criticalDistricts'),  val: kpis.critical,            sub:`${kpis.highRisk} high risk`,        color:'#ef4444',   path:'/admin/villages' },
+            { label: t('gwAvgDepth'),         val:`${kpis.avgGW}m`,         sub:`${kpis.avgChange > 0 ? '+' : ''}${kpis.avgChange}m/yr`, color: kpis.avgChange > 1 ? '#ef4444' : '#f59e0b', path:'/admin/groundwater' },
+            { label: t('droughtRisk'),        val: kpis.critical > 0 ? 'CRITICAL' : kpis.highRisk > 2 ? 'HIGH' : 'MEDIUM', sub:`${kpis.critical + kpis.highRisk} affected`, color: riskColor(kpis.critical > 0 ? 'CRITICAL' : kpis.highRisk > 2 ? 'HIGH' : 'MEDIUM'), path:'/admin/drought' },
+            { label: t('rainfallAnomaly'),    val:`${kpis.avgRain}%`,       sub:'vs 30-yr baseline',                 color: kpis.avgRain < -15 ? '#ef4444' : '#f59e0b', path:'/admin/drought' },
+            { label: t('rechargePotential'),  val:`${kpis.recharge} districts`, sub:'favourable conditions',         color:'#22c55e',   path:'/admin/recharge-planner' },
           ] as const).map(k => (
             <div key={k.label} onClick={() => nav(k.path)}
               style={{ ...cardS, borderLeft:`3px solid ${k.color}`, padding:'14px 18px', cursor:'pointer', transition:'background 0.15s' }}
@@ -690,12 +692,12 @@ export default function AdminDashboard() {
           <div style={{ ...cardS, padding:0, overflow:'hidden' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 18px', borderBottom:'1px solid var(--border-glass)', background:'var(--bg-card-hover)' }}>
               <div style={{ display:'flex', alignItems:'center', gap:7, fontWeight:800, fontSize:'0.88rem' }}>
-                <Activity size={15} color="#3b82f6" /> Regional Water Situation
+                <Activity size={15} color="#3b82f6" /> {t('regionalWaterSituation')}
                 {enriching && <span style={{ fontSize:'0.65rem', color:'#3b82f6', marginLeft:6, display:'flex', alignItems:'center', gap:4 }}><Loader2 size={10} style={{ animation:'spin 1s linear infinite' }}/> Updating…</span>}
               </div>
               <button onClick={() => nav('/admin/hydro-atlas')}
                 style={{ display:'flex', alignItems:'center', gap:5, background:'none', border:'1px solid var(--border-glass)', color:'var(--text-muted)', borderRadius:6, padding:'4px 10px', fontSize:'0.72rem', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-                <Map size={11}/> Hydro Atlas
+                <Map size={11}/> {t('hydroAtlas')}
               </button>
             </div>
             <div style={{ padding:'16px 18px' }}>
@@ -707,7 +709,7 @@ export default function AdminDashboard() {
           <div style={{ ...cardS, padding:0, overflow:'hidden' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 18px', borderBottom:'1px solid var(--border-glass)', background:'var(--bg-card-hover)' }}>
               <div style={{ display:'flex', alignItems:'center', gap:7, fontWeight:800, fontSize:'0.88rem' }}>
-                <Waves size={15} color="#3b82f6" /> Groundwater Intelligence
+                <Waves size={15} color="#3b82f6" /> {t('groundwaterExplorer')}
               </div>
               <button onClick={() => nav('/admin/groundwater')} style={{ display:'flex', alignItems:'center', gap:5, background:'none', border:'1px solid var(--border-glass)', color:'var(--text-muted)', borderRadius:6, padding:'4px 10px', fontSize:'0.72rem', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
                 <ExternalLink size={11}/> Explorer
@@ -749,7 +751,7 @@ export default function AdminDashboard() {
           <div style={{ ...cardS, padding:0, overflow:'hidden' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 18px', borderBottom:'1px solid var(--border-glass)', background:'var(--bg-card-hover)' }}>
               <div style={{ display:'flex', alignItems:'center', gap:7, fontWeight:800, fontSize:'0.88rem' }}>
-                <CloudRain size={15} color="#f97316" /> Drought Monitor
+                <CloudRain size={15} color="#f97316" /> {t('droughtMonitor')}
               </div>
               <button onClick={() => nav('/admin/drought')} style={{ display:'flex', alignItems:'center', gap:5, background:'none', border:'1px solid var(--border-glass)', color:'var(--text-muted)', borderRadius:6, padding:'4px 10px', fontSize:'0.72rem', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
                 <ExternalLink size={11}/> Intelligence
@@ -789,17 +791,17 @@ export default function AdminDashboard() {
           <div style={{ ...cardS, padding:0, overflow:'hidden' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 18px', borderBottom:'1px solid var(--border-glass)', background:'var(--bg-card-hover)' }}>
               <div style={{ display:'flex', alignItems:'center', gap:7, fontWeight:800, fontSize:'0.88rem' }}>
-                <ShieldAlert size={15} color="#ef4444" /> Districts Requiring Attention
+                <ShieldAlert size={15} color="#ef4444" /> {t('criticalDistricts')}
               </div>
               <button onClick={() => nav('/admin/villages')} style={{ display:'flex', alignItems:'center', gap:5, background:'none', border:'1px solid var(--border-glass)', color:'var(--text-muted)', borderRadius:6, padding:'4px 10px', fontSize:'0.72rem', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-                <ExternalLink size={11}/> All Districts
+                <ExternalLink size={11}/> {t('allDistricts')}
               </button>
             </div>
             <div style={{ overflowX:'auto' }}>
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'0.8rem', minWidth:680 }}>
                 <thead>
                   <tr style={{ background:'var(--bg-card-hover)', borderBottom:'1px solid var(--border-glass)' }}>
-                    {['District','GW Depth','Drought Risk','Water Health','AI Priority','Action'].map((h,i) => (
+                    {[t('district'), t('gwAvgDepth'), t('droughtRisk'), t('waterHealth'), t('aiPriority'), t('recommendedAction')].map((h,i) => (
                       <th key={h} style={{ padding:'10px 14px', textAlign: i>=5 ? 'center':'left', color:'var(--text-muted)', fontWeight:700, fontSize:'0.67rem', textTransform:'uppercase', letterSpacing:'0.04em', whiteSpace:'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -836,7 +838,7 @@ export default function AdminDashboard() {
                         </td>
                         <td style={{ padding:'10px 14px' }}>
                           <div style={{ display:'flex', gap:4, justifyContent:'center' }}>
-                            <button onClick={() => nav(analyzeNav)} style={{ padding:'4px 9px', borderRadius:5, border:'none', background:'#3b82f6', color:'#fff', fontSize:'0.72rem', fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Analyze</button>
+                            <button onClick={() => nav(analyzeNav)} style={{ padding:'4px 9px', borderRadius:5, border:'none', background:'#3b82f6', color:'#fff', fontSize:'0.72rem', fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>{t('analyzeRegion')}</button>
                             <button onClick={() => {
                               sessionStorage.setItem('jalrakshak_prefill_village', JSON.stringify({ id: v.id, name: v.name, district: v.district }));
                               nav('/admin/action-plan');
@@ -859,7 +861,7 @@ export default function AdminDashboard() {
           {/* Quick Actions */}
           <div style={{ ...cardS, padding:0, overflow:'hidden' }}>
             <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border-glass)', background:'var(--bg-card-hover)', fontWeight:800, fontSize:'0.88rem', display:'flex', alignItems:'center', gap:7 }}>
-              <Zap size={15} color="#3b82f6" /> Quick Actions
+              <Zap size={15} color="#3b82f6" /> {t('aiInsights')}
             </div>
             <div style={{ padding:'14px 16px', display:'flex', flexDirection:'column', gap:8 }}>
               {([
@@ -884,7 +886,7 @@ export default function AdminDashboard() {
           <div style={{ ...cardS, padding:0, overflow:'hidden' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 18px', borderBottom:'1px solid var(--border-glass)', background:'var(--bg-card-hover)' }}>
               <div style={{ fontWeight:800, fontSize:'0.88rem', display:'flex', alignItems:'center', gap:7 }}>
-                <Bell size={15} color="#ef4444" /> Critical Alerts
+                <Bell size={15} color="#ef4444" /> {t('recentAlerts')}
                 <span style={{ fontSize:'0.65rem', fontWeight:800, color:'#ef4444', background:'rgba(239,68,68,0.12)', border:'1px solid rgba(239,68,68,0.28)', borderRadius:10, padding:'1px 7px' }}>
                   {alerts.filter(a=>a.severity==='CRITICAL').length} critical
                 </span>
@@ -908,7 +910,7 @@ export default function AdminDashboard() {
               ))}
               <button onClick={() => nav('/admin/alerts')}
                 style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'8px', borderRadius:7, border:'1px solid var(--border-glass)', background:'transparent', color:'var(--text-muted)', fontSize:'0.78rem', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-                View All Alerts <ChevronRight size={13}/>
+                {t('viewAll')} <ChevronRight size={13}/>
               </button>
             </div>
           </div>
@@ -916,7 +918,7 @@ export default function AdminDashboard() {
           {/* Regional Summary */}
           <div style={{ ...cardS, padding:0, overflow:'hidden' }}>
             <div style={{ padding:'13px 18px', borderBottom:'1px solid var(--border-glass)', background:'var(--bg-card-hover)', fontWeight:800, fontSize:'0.88rem', display:'flex', alignItems:'center', gap:7 }}>
-              <Activity size={15} color="#8b5cf6" /> Regional Summary
+              <Activity size={15} color="#8b5cf6" /> {t('regionSummary')}
             </div>
             <div style={{ padding:'14px 16px', display:'flex', flexDirection:'column', gap:0 }}>
               {[

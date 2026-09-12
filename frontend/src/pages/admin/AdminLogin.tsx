@@ -18,7 +18,7 @@ import { useAdminAuth } from '../../context/AdminAuthContext';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [focused, setFocused] = useState<string>('');
@@ -33,19 +33,17 @@ export default function AdminLogin() {
     }
   }, [isAuthenticated, nav]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    if (username === 'admin' && password === 'admin123') {
-      setIsLoading(true);
-      login();
-
-      setTimeout(() => {
-        nav('/admin/dashboard', { replace: true });
-      }, 450);
+    const errMsg = await login(username, password);
+    if (errMsg) {
+      setError(errMsg);
+      setIsLoading(false);
     } else {
-      setError('Invalid username or password. Try again.');
+      nav('/admin/dashboard', { replace: true });
     }
   };
 
@@ -654,7 +652,7 @@ export default function AdminLogin() {
       <main className="login-shell">
         {/* LEFT BRAND / PRODUCT PANEL */}
         <section className="brand-panel">
-          <div className="brand-top">
+          <div className="brand-top" onClick={() => nav('/')} style={{ cursor: 'pointer' }} title="Return to Home page">
             <div className="brand-mark">
               <Droplet size={25} color="#fff" strokeWidth={1.7} />
             </div>
@@ -838,8 +836,7 @@ export default function AdminLogin() {
               style={{ color: '#60a5fa', flexShrink: 0, marginTop: 1 }}
             />
             <span>
-              Protected administrator area. Demo authentication is enabled
-              for the hackathon environment.
+              Protected administrator area. Default credentials: <strong>admin</strong> / <strong>admin@123</strong> (or <strong>jalrakshak2024</strong>).
             </span>
           </div>
 

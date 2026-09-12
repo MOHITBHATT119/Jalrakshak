@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   Zap, Droplets, TrendingUp, TrendingDown, Users, DollarSign,
   BarChart2, CheckCircle, XCircle, AlertTriangle, BrainCircuit,
@@ -339,6 +340,7 @@ interface SavedScenario {
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
 export default function InterventionImpact() {
+  const { t } = useLanguage();
   const nav = useNavigate();
 
   // selectors
@@ -482,7 +484,7 @@ export default function InterventionImpact() {
               <div style={{ width: 38, height: 38, borderRadius: 9, background: 'rgba(59,130,246,0.2)', border: '1px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Zap size={18} color="#60a5fa" />
               </div>
-              <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Intervention Impact & Decision Center</h1>
+              <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>{t('interventionImpact')}</h1>
             </div>
             <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>Compare water interventions and estimate their potential impact before implementation.</p>
           </div>
