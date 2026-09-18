@@ -269,7 +269,7 @@ function App() {
   const [mode, setMode] = useState<Mode>('community');
   const [lang, setLang] = useState<'en' | 'gu'>('en');
   const [demoMode, setDemoMode] = useState(true);
-  const [selectedVillage, setSelectedVillage] = useState('V001');
+  const [selectedVillage, setSelectedVillage] = useState('RKT001');
 
   useEffect(() => {
     getHealth().then(h => setDemoMode(h.demo_mode)).catch(() => setDemoMode(true));

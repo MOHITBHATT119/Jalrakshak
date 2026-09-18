@@ -25,21 +25,62 @@ import {
 } from 'lucide-react';
 import { useFarmerAuth } from '../../context/FarmerAuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { getVillages, getGroundwater, getDroughtRisk, getWaterHealth } from '../../services/api';
 
 export default function FarmerDashboard() {
   const { farmerUser, logout } = useFarmerAuth();
   const { lang, setLang } = useLanguage();
   const navigate = useNavigate();
 
-  const [waterHealthScore, setWaterHealthScore] = useState(64);
-  const [groundwaterDepth, setGroundwaterDepth] = useState(19.2);
-  const [deficitPct, setDeficitPct] = useState(-24.5);
+  const [waterHealthScore, setWaterHealthScore] = useState<number>(64);
+  const [groundwaterDepth, setGroundwaterDepth] = useState<number>(19.2);
+  const [deficitPct, setDeficitPct] = useState<number>(-18.5);
+  const [gwChange, setGwChange] = useState<number>(0.35);
+  const [provenanceTag, setProvenanceTag] = useState<string>('Estimated · CGWB / Census');
   const [activeCopilotQuery, setActiveCopilotQuery] = useState('');
 
-  const village = farmerUser?.village || 'Amreli';
-  const district = farmerUser?.district || 'Amreli';
+  const village = farmerUser?.village || 'Kothariya';
+  const district = farmerUser?.district || 'Rajkot';
   const landArea = farmerUser?.land_area_ha || 4.5;
   const crops = farmerUser?.primary_crops || 'Cotton, Groundnut';
+
+  useEffect(() => {
+    let isMounted = true;
+    getVillages().then((res) => {
+      const list = res.villages || [];
+      if (!isMounted || !list.length) return;
+      const matched = list.find(
+        (v) => v.name.toLowerCase() === village.toLowerCase() ||
+               v.village_id.toLowerCase() === village.toLowerCase() ||
+               v.district.toLowerCase() === district.toLowerCase()
+      ) || list[0];
+
+      if (matched) {
+        setGroundwaterDepth(matched.groundwater_depth_m);
+        setProvenanceTag(matched.data_source === 'live' ? 'Live · data.gov.in' : 'Estimated · CGWB / Census');
+
+        getWaterHealth(matched.village_id).then((wh) => {
+          if (isMounted && wh) setWaterHealthScore(wh.overall_score);
+        }).catch(() => {});
+
+        getGroundwater(matched.village_id).then((gw) => {
+          if (isMounted && gw) {
+            setGroundwaterDepth(gw.current_depth_m);
+            setGwChange(gw.annual_change_m);
+          }
+        }).catch(() => {});
+
+        getDroughtRisk(matched.village_id).then((dr) => {
+          if (isMounted && dr?.components?.rainfall_score !== undefined) {
+            const def = Math.round((dr.components.rainfall_score - 50) * 0.7);
+            setDeficitPct(def);
+          }
+        }).catch(() => {});
+      }
+    }).catch(() => {});
+
+    return () => { isMounted = false; };
+  }, [village, district]);
 
   const handleCopilotAsk = (query: string) => {
     navigate('/copilot', { state: { initialPrompt: query } });
@@ -283,10 +324,22 @@ export default function FarmerDashboard() {
               </span>
               <span style={{ fontSize: '0.9rem', color: '#94a3b8' }}>metres bgl</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: '#f59e0b' }}>
-              <TrendingDown size={14} />
-              <span>
-                {lang === 'gu' ? 'છેલ્લા વર્ષ કરતા 0.8m ઘટ્યું' : '0.8m drop compared to last year'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#f59e0b' }}>
+                <TrendingDown size={14} />
+                <span>
+                  {lang === 'gu' ? `છેલ્લા વર્ષ કરતા ${gwChange}m ઘટ્યું` : `${gwChange}m change vs prev year`}
+                </span>
+              </div>
+              <span style={{
+                background: 'rgba(56, 189, 248, 0.12)',
+                color: '#38bdf8',
+                fontSize: '0.68rem',
+                padding: '2px 6px',
+                borderRadius: 6,
+                fontWeight: 600,
+              }}>
+                {provenanceTag}
               </span>
             </div>
           </div>

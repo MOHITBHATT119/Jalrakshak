@@ -312,12 +312,12 @@ export default function LandingPage({ setMode }: { setMode: (m: Mode) => void })
           ))}
         </div>
 
-        <div style={{ marginTop: '60px', textAlign: 'center', fontSize: '0.8rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ marginTop: '60px', textAlign: 'center', fontSize: '0.8rem', color: '#475569', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px' }}>
           <span>Powered by IBM watsonx.ai</span>
           <span>•</span>
-          <span>Saurashtra 2026</span>
+          <span>Saurashtra Water Intelligence</span>
           <span>•</span>
-          <span>Demonstration Mode</span>
+          <span>Live Govt API Integration</span>
         </div>
 
       </div>

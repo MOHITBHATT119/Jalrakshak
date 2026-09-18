@@ -44,12 +44,19 @@ logging.getLogger("uvicorn.access").addFilter(_noisy_filter)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Ensure DB schema exists and is seeded on server start."""
+    """Ensure DB schema exists and start background sync scheduler."""
     access_logger = logging.getLogger("uvicorn.access")
     if _noisy_filter not in access_logger.filters:
         access_logger.addFilter(_noisy_filter)
     init_db()
+    
+    # Start APScheduler for daily IMD rainfall / weekly CGWB sync
+    from app.services.scheduler import start_scheduler, shutdown_scheduler
+    start_scheduler()
+    
     yield
+    
+    shutdown_scheduler()
 
 
 app = FastAPI(

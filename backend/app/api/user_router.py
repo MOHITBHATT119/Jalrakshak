@@ -5,7 +5,13 @@ Allows administrators to view, approve, edit, suspend, and delete farmers and sy
 from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from pydantic import BaseModel
-from app.core.security import require_admin, hash_password
+from app.core.security import (
+    require_admin,
+    hash_password,
+    validate_password_complexity,
+    validate_email_format,
+    validate_phone_format,
+)
 from app.services.database import (
     db_get_users, db_get_user_by_id, db_create_user,
     db_update_user, db_update_user_status, db_delete_user,
@@ -95,6 +101,11 @@ async def create_user(req: CreateUserRequest, _admin: str = Depends(require_admi
     email = req.email.strip().lower() if req.email else None
     phone = req.phone.strip() if req.phone else None
 
+    if email and not validate_email_format(email):
+        raise HTTPException(status_code=422, detail="Invalid email address format")
+    if phone and not validate_phone_format(phone):
+        raise HTTPException(status_code=422, detail="Invalid phone number format (must have >= 10 digits)")
+
     if email:
         if db_get_user_by_email_or_phone(email):
             raise HTTPException(status_code=400, detail=f"Email {email} already registered")
@@ -102,7 +113,11 @@ async def create_user(req: CreateUserRequest, _admin: str = Depends(require_admi
         if db_get_user_by_email_or_phone(phone):
             raise HTTPException(status_code=400, detail=f"Phone {phone} already registered")
 
-    pwd = req.password or "farmer123"
+    pwd = req.password or "Farmer@Secure123"
+    valid_pwd, reason = validate_password_complexity(pwd)
+    if not valid_pwd:
+        raise HTTPException(status_code=422, detail=reason)
+
     hashed = hash_password(pwd)
 
     new_u = db_create_user({

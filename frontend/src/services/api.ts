@@ -179,9 +179,17 @@ export const previewDataTable = (table: string, villageId?: string) => {
   return api.get(`/data/preview/${table}${params}`).then(r => r.data);
 };
 
-/** Authenticate and retrieve JWT — stored automatically by AdminAuthContext */
-export const loginAdmin = (username: string, password: string) =>
-  api.post<{ access_token: string; token_type: string }>('/auth/login', { username, password })
+export const ingestDataGov = (district_filter?: string) =>
+  api.post('/data/ingest/data-gov', { district_filter }).then(r => r.data);
+
+export const ingestCgwb = (district_filter?: string) => {
+  const params = district_filter ? `?district_filter=${district_filter}` : '';
+  return api.post(`/data/ingest/cgwb${params}`).then(r => r.data);
+};
+
+/** Fetch verified admin profile from /auth/me */
+export const getAdminProfile = () =>
+  api.get<{ id: string; username: string; role: string; status: string }>('/auth/me')
     .then(r => r.data);
 
 export const getVillages = () => api.get<{ villages: Village[]; count: number }>('/villages').then(r => r.data);

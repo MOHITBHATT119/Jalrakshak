@@ -19,4 +19,5 @@ psycopg[binary]>=3.2.0
 
 # File uploads & form handling
 python-multipart>=0.0.9
+apscheduler>=3.10.0
 

@@ -238,11 +238,11 @@ VALID_TABLES = {"villages","groundwater","rainfall","water_demand","recharge","c
 
 @data_router.delete("/reset/{table}", dependencies=[Depends(require_admin)])
 def reset_table(table: str):
-    """Delete all live rows for a table — reverts to demo/CSV seed data."""
+    """Delete all rows for a table — reverts table to empty state."""
     if table not in VALID_TABLES:
         raise HTTPException(400, f"Unknown table '{table}'. Valid: {VALID_TABLES}")
     delete_table_live_rows(table)
-    return {"message": f"Live data deleted from '{table}'. Demo data is now active."}
+    return {"message": f"Table '{table}' cleared successfully."}
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1,19 +1,269 @@
-village_id,year,structure_type,count,estimated_recharge_mcm,status,notes
-V001,2019,check_dam,12,8.5,operational,Aji river basin
-V001,2020,check_dam,15,10.2,operational,Additional 3 constructed
-V001,2021,farm_pond,45,5.8,operational,Farmer-driven initiative
-V001,2022,recharge_well,120,3.2,operational,MNREGS scheme
-V001,2023,percolation_tank,8,12.5,operational,State govt scheme
-V002,2019,check_dam,18,12.5,operational,Ozat river basin
-V002,2020,check_dam,22,15.2,operational,Expansion
-V002,2021,farm_pond,85,8.5,operational,High adoption
-V002,2022,recharge_well,200,5.8,operational,District scheme
-V003,2019,check_dam,8,6.2,operational,Shallow aquifer area
-V003,2020,recharge_pit,350,4.5,operational,Hard rock recharge
-V003,2021,contour_bund,120,8.8,operational,Watershed development
-V004,2019,check_dam,10,7.5,operational,Coastal creek management
-V004,2020,percolation_tank,6,9.2,operational,Govt scheme
-V007,2019,check_dam,5,3.8,operational,Limited rainfall area
-V007,2020,farm_pond,25,2.5,operational,Pilot scheme
-V007,2021,recharge_well,80,2.1,operational,District initiative
-V007,2022,check_dam,8,5.2,partial,Under construction
+village_id,year,structure_type,count,estimated_recharge_mcm,status,notes,data_source
+RKT001,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT001,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT001,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT001,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT002,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT002,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT002,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT002,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT003,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT003,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT003,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT003,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT004,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT004,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT004,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT004,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT005,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT005,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT005,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT005,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT006,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT006,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT006,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT006,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT007,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT007,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT007,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT007,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT008,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT008,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT008,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT008,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT009,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT009,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT009,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT009,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT010,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT010,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT010,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT010,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT011,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT011,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT011,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT011,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT012,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT012,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT012,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT012,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT013,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT013,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT013,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT013,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT014,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT014,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT014,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT014,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+RKT015,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+RKT015,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+RKT015,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+RKT015,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JNG001,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JNG001,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JNG001,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JNG001,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JNG002,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JNG002,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JNG002,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JNG002,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JNG003,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JNG003,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JNG003,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JNG003,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JNG004,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JNG004,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JNG004,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JNG004,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JNG005,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JNG005,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JNG005,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JNG005,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JNG006,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JNG006,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JNG006,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JNG006,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JNG007,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JNG007,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JNG007,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JNG007,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JNG008,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JNG008,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JNG008,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JNG008,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+AMR001,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+AMR001,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+AMR001,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+AMR001,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+AMR002,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+AMR002,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+AMR002,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+AMR002,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+AMR003,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+AMR003,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+AMR003,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+AMR003,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+AMR004,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+AMR004,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+AMR004,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+AMR004,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+AMR005,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+AMR005,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+AMR005,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+AMR005,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+AMR006,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+AMR006,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+AMR006,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+AMR006,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+AMR007,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+AMR007,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+AMR007,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+AMR007,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+AMR008,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+AMR008,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+AMR008,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+AMR008,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+AMR009,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+AMR009,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+AMR009,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+AMR009,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+AMR010,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+AMR010,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+AMR010,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+AMR010,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+BHV001,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+BHV001,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+BHV001,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+BHV001,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+BHV002,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+BHV002,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+BHV002,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+BHV002,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+BHV003,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+BHV003,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+BHV003,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+BHV003,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+BHV004,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+BHV004,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+BHV004,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+BHV004,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+BHV005,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+BHV005,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+BHV005,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+BHV005,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+SRN001,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+SRN001,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+SRN001,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+SRN001,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+SRN002,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+SRN002,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+SRN002,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+SRN002,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+SRN003,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+SRN003,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+SRN003,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+SRN003,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+SRN004,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+SRN004,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+SRN004,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+SRN004,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+SRN005,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+SRN005,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+SRN005,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+SRN005,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+GIR001,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+GIR001,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+GIR001,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+GIR001,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+GIR002,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+GIR002,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+GIR002,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+GIR002,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+GIR003,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+GIR003,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+GIR003,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+GIR003,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+GIR004,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+GIR004,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+GIR004,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+GIR004,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+GIR005,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+GIR005,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+GIR005,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+GIR005,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JMN001,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JMN001,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JMN001,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JMN001,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JMN002,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JMN002,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JMN002,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JMN002,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JMN003,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JMN003,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JMN003,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JMN003,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JMN004,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JMN004,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JMN004,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JMN004,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+JMN005,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+JMN005,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+JMN005,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+JMN005,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+MOR001,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+MOR001,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+MOR001,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+MOR001,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+MOR002,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+MOR002,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+MOR002,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+MOR002,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+MOR003,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+MOR003,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+MOR003,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+MOR003,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+MOR004,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+MOR004,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+MOR004,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+MOR004,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+PBD001,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+PBD001,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+PBD001,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+PBD001,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+PBD002,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+PBD002,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+PBD002,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+PBD002,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+PBD003,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+PBD003,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+PBD003,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+PBD003,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+DWK001,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+DWK001,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+DWK001,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+DWK001,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+DWK002,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+DWK002,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+DWK002,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+DWK002,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+DWK003,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+DWK003,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+DWK003,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+DWK003,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+DWK004,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+DWK004,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+DWK004,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+DWK004,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+BTD001,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+BTD001,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+BTD001,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+BTD001,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+BTD002,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+BTD002,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+BTD002,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+BTD002,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated
+BTD003,2021,check_dam,4,1.8,operational,Govt watershed scheme,estimated
+BTD003,2022,farm_pond,12,0.9,operational,Farmer-led community pond,estimated
+BTD003,2023,recharge_borewell,25,0.45,operational,Direct aquifer injection,estimated
+BTD003,2024,percolation_tank,2,2.1,planned,Sujalam Sufalam Jal Abhiyan,estimated

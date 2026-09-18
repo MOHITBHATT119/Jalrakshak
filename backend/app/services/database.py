@@ -310,6 +310,22 @@ CREATE TABLE IF NOT EXISTS users (
     is_demo               INTEGER DEFAULT 0,
     notes                 TEXT
 );
+
+CREATE TABLE IF NOT EXISTS login_audit (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    identifier     TEXT NOT NULL,
+    ip_address     TEXT,
+    user_agent     TEXT,
+    success        INTEGER NOT NULL,
+    failure_reason TEXT,
+    created_at     TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS revoked_tokens (
+    jti         TEXT PRIMARY KEY,
+    revoked_at  TEXT DEFAULT (datetime('now')),
+    expires_at  TEXT
+);
 """
 
 # Postgres-specific schema (replaces AUTOINCREMENT + datetime syntax)
@@ -389,7 +405,7 @@ def _migrate_postgres(conn):
 
 
 def _seed_users(conn):
-    """Seed initial demo users and farmers if users table is empty."""
+    """Seed initial evaluation users when users table is empty."""
     try:
         count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
         if count > 0:
@@ -427,7 +443,7 @@ def _seed_users(conn):
 
 
 def init_db():
-    """Create schema and seed from CSVs. Safe to call multiple times."""
+    """Create schema and seed master data from CSVs. Safe to call multiple times."""
     with _lock:
         conn = _get_conn()
         try:
@@ -750,13 +766,13 @@ def upsert_recharge_rows(rows: list):
 
 
 def delete_table_live_rows(table: str):
-    """Reset a table back to demo-only (delete all live rows)."""
+    """Clear all records from a table (reverts to empty state)."""
     allowed = {"villages", "groundwater", "rainfall", "water_demand", "recharge", "crops"}
     if table not in allowed:
         raise ValueError(f"Unknown table: {table}")
     conn = _get_conn()
     try:
-        conn.execute(f"DELETE FROM {table} WHERE data_source='live'")
+        conn.execute(f"DELETE FROM {table}")
         conn.commit()
     finally:
         conn.close()
@@ -897,6 +913,89 @@ def db_delete_user(user_id: str) -> bool:
         conn.execute("DELETE FROM users WHERE id=?", [user_id])
         conn.commit()
         return True
+    finally:
+        conn.close()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AUDIT & TOKEN REVOCATION HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
+
+def db_record_login_audit(
+    identifier: str,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+    success: bool = True,
+    failure_reason: Optional[str] = None,
+):
+    """Log an authentication event with client telemetry and outcome."""
+    now = _now_expr()
+    conn = _get_conn()
+    try:
+        if USE_POSTGRES:
+            sql = f"""
+                INSERT INTO login_audit (identifier, ip_address, user_agent, success, failure_reason, created_at)
+                VALUES ($1, $2, $3, $4, $5, {now})
+            """
+        else:
+            sql = f"""
+                INSERT INTO login_audit (identifier, ip_address, user_agent, success, failure_reason, created_at)
+                VALUES (?, ?, ?, ?, ?, {now})
+            """
+        conn.execute(sql, [identifier, ip_address or "", user_agent or "", 1 if success else 0, failure_reason or ""])
+        conn.commit()
+    except Exception as exc:
+        logger.warning("Failed to record login audit: %s", exc)
+    finally:
+        conn.close()
+
+
+def db_get_login_audit(limit: int = 50) -> list:
+    """Return recent login audit records."""
+    conn = _get_conn()
+    try:
+        rows = conn.execute(
+            f"SELECT id, identifier, ip_address, user_agent, success, failure_reason, created_at FROM login_audit ORDER BY id DESC LIMIT {limit}"
+        ).fetchall()
+        return [
+            {
+                "id": r[0],
+                "identifier": r[1],
+                "ip_address": r[2],
+                "user_agent": r[3],
+                "success": bool(r[4]),
+                "failure_reason": r[5],
+                "created_at": r[6],
+            }
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def db_revoke_token(jti: str, expires_at: Optional[str] = None):
+    """Revoke a token jti so it cannot be reused."""
+    now = _now_expr()
+    conn = _get_conn()
+    try:
+        if USE_POSTGRES:
+            sql = f"INSERT INTO revoked_tokens (jti, revoked_at, expires_at) VALUES ($1, {now}, $2) ON CONFLICT (jti) DO NOTHING"
+        else:
+            sql = f"INSERT OR IGNORE INTO revoked_tokens (jti, revoked_at, expires_at) VALUES (?, {now}, ?)"
+        conn.execute(sql, [jti, expires_at or ""])
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def db_is_token_revoked(jti: str) -> bool:
+    """Check if token jti is in the revocation blacklist."""
+    if not jti:
+        return False
+    conn = _get_conn()
+    try:
+        row = conn.execute("SELECT 1 FROM revoked_tokens WHERE jti=?", [jti]).fetchone()
+        return row is not None
     finally:
         conn.close()
 

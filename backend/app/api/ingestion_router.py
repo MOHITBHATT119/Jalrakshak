@@ -10,9 +10,10 @@ from typing import Optional
 from app.core.security import require_admin
 from app.services.ingestion.data_gov_connector import (
     fetch_rainfall_district,
-    GUJARAT_RAINFALL_RESOURCE,
+    fetch_cgwb_groundwater_assessments,
+    DATA_GOV_DISTRICT_RAINFALL_RESOURCE,
 )
-from app.services.database import upsert_rainfall_rows, get_table_stats
+from app.services.database import upsert_rainfall_rows, upsert_groundwater_rows, get_table_stats
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ def ingest_from_data_gov(req: DataGovIngestRequest = DataGovIngestRequest()):
     - resource_id: override the default IMD Gujarat rainfall resource
     - district_filter: restrict to a single Saurashtra district (e.g. 'Rajkot')
     """
-    resource_id = req.resource_id or GUJARAT_RAINFALL_RESOURCE
+    resource_id = req.resource_id or DATA_GOV_DISTRICT_RAINFALL_RESOURCE
 
     try:
         rows = fetch_rainfall_district(
@@ -77,8 +78,32 @@ def ingest_from_data_gov(req: DataGovIngestRequest = DataGovIngestRequest()):
     return {
         "status": "ok",
         "rows_inserted": len(clean_rows),
-        "source": "data.gov.in",
+        "source": "IMD / data.gov.in",
         "resource_id": resource_id,
         "district_filter": req.district_filter,
         "rainfall_table": stats.get("rainfall"),
     }
+
+
+@ingestion_router.post("/cgwb")
+def ingest_from_cgwb(district_filter: Optional[str] = None):
+    """
+    Pull groundwater assessments from CGWB baseline and upsert into database.
+    """
+    try:
+        rows = fetch_cgwb_groundwater_assessments(district_filter=district_filter)
+        clean_rows = [
+            {k: v for k, v in r.items() if k not in ("gov_source", "district")}
+            for r in rows
+        ]
+        upsert_groundwater_rows(clean_rows)
+        stats = get_table_stats()
+        return {
+            "status": "ok",
+            "rows_inserted": len(clean_rows),
+            "source": "CGWB Dynamic Ground Water Resource Assessment",
+            "groundwater_table": stats.get("groundwater"),
+        }
+    except Exception as exc:
+        logger.exception("CGWB Ingestion failed")
+        raise HTTPException(status_code=500, detail=f"CGWB ingestion failed: {exc}")
