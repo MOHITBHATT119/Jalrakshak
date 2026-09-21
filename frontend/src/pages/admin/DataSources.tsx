@@ -461,50 +461,6 @@ export default function DataSources() {
         </div>
       )}
 
-      {/* ── API reference ── */}
-      <div style={{ ...cardBase, padding: '20px 22px' }}>
-        <div style={{ fontWeight: 700, marginBottom: 14, fontSize: '0.88rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: 7 }}>
-          <FileText size={15} color="var(--text-muted)" /> API Endpoints
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400, marginLeft: 4 }}>(for system integration)</span>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: 10 }}>
-          {[
-            ['GET',    '/api/v1/data/status',             'Data mode & table statistics'],
-            ['POST',   '/api/v1/data/upload/villages',    'Upload villages CSV'],
-            ['POST',   '/api/v1/data/upload/groundwater', 'Upload groundwater CSV'],
-            ['POST',   '/api/v1/data/upload/rainfall',    'Upload rainfall CSV'],
-            ['POST',   '/api/v1/data/upload/water-demand','Upload water demand CSV'],
-            ['POST',   '/api/v1/data/upload/recharge',    'Upload recharge CSV'],
-            ['GET',    '/api/v1/data/preview/{table}',    'Preview current table data'],
-            ['DELETE', '/api/v1/data/reset/{table}',      'Delete live rows (revert to demo)'],
-            ['POST',   '/api/v1/data/entry/groundwater',  'Manual groundwater entry (JSON)'],
-            ['POST',   '/api/v1/data/entry/rainfall',     'Manual rainfall entry (JSON)'],
-            ['POST',   '/api/v1/data/entry/water-demand', 'Manual water demand entry (JSON)'],
-          ].map(([method, path, desc]) => (
-            <div key={path} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '6px 0', borderBottom: '1px solid var(--border-glass)' }}>
-              <span style={{
-                fontFamily: 'monospace', fontSize: '0.67rem', fontWeight: 800,
-                color: method === 'GET' ? '#16a34a' : method === 'POST' ? '#2563eb' : '#dc2626',
-                background: method === 'GET' ? 'rgba(34,197,94,0.1)' : method === 'POST' ? 'rgba(59,130,246,0.1)' : 'rgba(239,68,68,0.1)',
-                border: `1px solid ${method === 'GET' ? 'rgba(34,197,94,0.3)' : method === 'POST' ? 'rgba(59,130,246,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                borderRadius: 3, padding: '2px 5px', flexShrink: 0, marginTop: 1,
-                letterSpacing: '0.03em',
-              }}>{method}</span>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontFamily: 'monospace', fontSize: '0.74rem', color: '#3b82f6', marginBottom: 1, wordBreak: 'break-all' }}>{path}</div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{desc}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop: 14, fontSize: '0.75rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-glass)', paddingTop: 12 }}>
-          Full interactive docs:{' '}
-          <a href="http://localhost:8001/docs" target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 600 }}>
-            http://localhost:8001/docs
-          </a>
-        </div>
-      </div>
-
       <style>{`
         .ds-spin { animation: ds-rotate 1s linear infinite; display: inline-flex; }
         @keyframes ds-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

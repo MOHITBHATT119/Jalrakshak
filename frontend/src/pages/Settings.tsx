@@ -403,44 +403,6 @@ export default function Settings({ lang }: Props) {
         </div>
 
         {/* ── API ENDPOINTS ───────────────────────────────────────────────── */}
-        <div style={{ ...card, gridColumn: '1 / -1' }}>
-          <SectionTitle icon={<Terminal size={16} />} label="Backend API" />
-          <div style={{ padding: '16px 20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 8 }}>
-              {[
-                { method: 'GET',    path: '/api/v1/health',              desc: 'Health check & watsonx status' },
-                { method: 'GET',    path: '/api/v1/villages',            desc: 'List all villages' },
-                { method: 'GET',    path: '/api/v1/villages/{id}/water-health', desc: 'Water health score' },
-                { method: 'GET',    path: '/api/v1/villages/{id}/groundwater',  desc: 'Groundwater depth & trend' },
-                { method: 'GET',    path: '/api/v1/villages/{id}/risk',         desc: 'Drought risk assessment' },
-                { method: 'POST',   path: '/api/v1/copilot',             desc: 'AI Water Copilot (Granite)' },
-                { method: 'POST',   path: '/api/v1/action-plan',         desc: 'Generate action plan' },
-                { method: 'GET',    path: '/api/v1/data/status',         desc: 'Data mode & table stats' },
-                { method: 'POST',   path: '/api/v1/data/upload/{table}', desc: 'Upload CSV data' },
-              ].map(({ method, path, desc }) => {
-                const mc = method === 'GET' ? '#16a34a' : method === 'POST' ? '#2563eb' : '#dc2626';
-                const mb = method === 'GET' ? 'rgba(34,197,94,0.1)' : method === 'POST' ? 'rgba(59,130,246,0.1)' : 'rgba(239,68,68,0.1)';
-                return (
-                  <div key={path} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '6px 0', borderBottom: '1px solid var(--border-glass)' }}>
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.65rem', fontWeight: 800, color: mc, background: mb, border: `1px solid ${mc}44`, borderRadius: 3, padding: '2px 5px', flexShrink: 0, marginTop: 1 }}>
-                      {method}
-                    </span>
-                    <div>
-                      <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#3b82f6', marginBottom: 1 }}>{path}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{desc}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border-glass)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Interactive Swagger docs:{' '}
-              <a href="http://localhost:8001/docs" target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 600 }}>
-                http://localhost:8001/docs
-              </a>
-            </div>
-          </div>
-        </div>
 
       </div>
 
