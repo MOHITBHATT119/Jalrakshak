@@ -32,6 +32,11 @@ export default function FarmerDashboard() {
   const { lang, setLang } = useLanguage();
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   const [waterHealthScore, setWaterHealthScore] = useState<number>(64);
   const [groundwaterDepth, setGroundwaterDepth] = useState<number>(19.2);
   const [deficitPct, setDeficitPct] = useState<number>(-18.5);
@@ -87,14 +92,29 @@ export default function FarmerDashboard() {
   };
 
   return (
-    <div style={{
+    <div className="farmer-dashboard-root" style={{
       minHeight: '100vh',
       background: '#030712',
       color: '#f8fafc',
       fontFamily: 'Inter, system-ui, sans-serif',
-      padding: '24px 20px 48px 20px',
+      padding: 'clamp(14px, 3vw, 28px) clamp(12px, 3vw, 24px) 48px',
       boxSizing: 'border-box',
     }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .farmer-hero-card {
+            padding: 18px !important;
+          }
+          .farmer-hero-actions {
+            width: 100% !important;
+            flex-direction: column !important;
+          }
+          .farmer-hero-actions a {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+        }
+      `}</style>
       {/* Top Banner Navigation */}
       <div style={{
         maxWidth: 1200,
@@ -178,7 +198,7 @@ export default function FarmerDashboard() {
           </Link>
 
           <button
-            onClick={logout}
+            onClick={handleLogout}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -201,7 +221,7 @@ export default function FarmerDashboard() {
 
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* Welcome Personalized Hero */}
-        <div style={{
+        <div className="farmer-hero-card" style={{
           background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(14, 165, 233, 0.10) 100%)',
           border: '1px solid rgba(52, 211, 153, 0.25)',
           borderRadius: 20,
@@ -254,7 +274,7 @@ export default function FarmerDashboard() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div className="farmer-hero-actions" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Link
               to="/crops"
               style={{

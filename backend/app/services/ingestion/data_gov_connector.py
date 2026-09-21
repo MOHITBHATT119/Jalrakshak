@@ -9,6 +9,8 @@ Normalises data directly to real Saurashtra village master entities (with LGD co
 eliminating synthetic district slugs.
 """
 import os
+import re
+import time
 import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -16,6 +18,17 @@ from typing import Optional, List, Dict, Any
 import httpx
 
 logger = logging.getLogger(__name__)
+
+# ── In-Memory TTL Cache Configuration ───────────────────────────────────────
+_CONNECTOR_CACHE: Dict[str, Dict[str, Any]] = {}
+CACHE_TTL_SECONDS = 3600  # 1 hour TTL for external government meteorological queries
+_MAUSAM_ACTIVE: bool = False  # set True when the keyless mausam feed is the source
+
+
+def clear_connector_cache():
+    """Clear cached government ingestion responses."""
+    _CONNECTOR_CACHE.clear()
+
 
 # ── Environment & API Configuration ──────────────────────────────────────────
 DATA_GOV_API_KEY = os.environ.get("DATA_GOV_API_KEY", "").strip()
@@ -35,6 +48,8 @@ GUJARAT_RAHAT_TALUKA_URL = "https://rahat.gujarat.gov.in/api/rainfall/talukawise
 SAURASHTRA_DISTRICTS = {
     "rajkot": "Rajkot",
     "junagadh": "Junagadh",
+    "junagarh": "Junagadh",
+    "junarag": "Junagadh",
     "amreli": "Amreli",
     "bhavnagar": "Bhavnagar",
     "surendranagar": "Surendranagar",
@@ -46,6 +61,7 @@ SAURASHTRA_DISTRICTS = {
     "somnath": "Gir Somnath",
     "devbhumi dwarka": "Devbhumi Dwarka",
     "devbhoomi dwarka": "Devbhumi Dwarka",
+    "dev bhoomi dwarka": "Devbhumi Dwarka",
     "dwarka": "Devbhumi Dwarka",
     "botad": "Botad",
 }
@@ -95,6 +111,127 @@ def _get_registered_villages() -> List[Dict[str, Any]]:
         return []
 
 
+MAUSAM_RAINFALL_URL = "https://mausam.imd.gov.in/responsive/rainfallinformation.php?msg=M"
+
+
+def parse_mausam_district_objects(
+    content: str,
+    district_filter: Optional[str] = None,
+) -> Dict[str, Dict[str, float]]:
+    """
+    Parse the embedded per-district objects from the mausam.imd.gov.in rainfall page.
+
+    Each district is a JS object: {title, id, color, info, balloonText} with
+    balloonText = "<h6>NAME</h6> Date : YYYY-MM-DD / Departure : N% /
+                  Actual : N mm / Normal : N mm".
+    Returns {canonical_district: {"actual": float, "normal": float}}.
+    """
+    obj_pat = re.compile(
+        r'\{\s*"title":\s*"([^"]+)"\s*,\s*"id":\s*"\d+"\s*,\s*"color":\s*"[^"]+"\s*,'
+        r'\s*"info":\s*"([^"]+)"\s*,\s*"balloonText":\s*"(.*?)"\s*\}',
+        re.S,
+    )
+    readings: Dict[str, Dict[str, float]] = {}
+    pos = 0
+    target = _normalise_district(district_filter) if district_filter else None
+    while True:
+        m = obj_pat.search(content, pos)
+        if not m:
+            break
+        pos = m.end()
+        dist = _normalise_district(m.group(1))
+        if not dist or (target and dist != target):
+            continue
+        balloon = m.group(3)
+        actual_m = re.search(r"Actual : ([0-9.]+) mm", balloon)
+        normal_m = re.search(r"Normal : ([0-9.]+) mm", balloon)
+        if not actual_m or not normal_m:
+            continue  # "No Data" districts are skipped
+        readings[dist] = {
+            "actual": round(float(actual_m.group(1)), 1),
+            "normal": round(float(normal_m.group(1)), 1),
+        }
+    return readings
+
+
+def _fetch_mausam_monthly_district_readings(
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    district_filter: Optional[str] = None,
+) -> Dict[str, Dict[str, float]]:
+    """
+    Pull REAL monthly cumulative district rainfall (actual vs normal, departure %)
+    from the keyless IMD mausam public page. Returns {canonical_district: {...}}.
+
+    Works without any API key — the monthly "Rainfall Information" map embeds the
+    current month actual/normal per district. Only available for the current month.
+    """
+    now = datetime.now()
+    target_year = year or now.year
+    target_month = month or now.month
+    if (target_year, target_month) != (now.year, now.month):
+        logger.info("mausam monthly feed only covers current month (%s-%s); skipping",
+                    now.year, now.month)
+        return {}
+
+    global _MAUSAM_ACTIVE
+
+    mausam_cache_key = f"mausam:{target_year}:{target_month}:{district_filter or 'all'}"
+    cached = _CONNECTOR_CACHE.get(mausam_cache_key)
+    if cached and (time.time() - cached["ts"] < CACHE_TTL_SECONDS):
+        return cached["data"]
+
+    headers = {"User-Agent": "Mozilla/5.0 (JalRakshak-AI/2.0)"}
+    readings: Dict[str, Dict[str, float]] = {}
+    try:
+        with httpx.Client(timeout=12.0, follow_redirects=True) as client:
+            resp = client.get(MAUSAM_RAINFALL_URL, headers=headers)
+            if resp.status_code != 200:
+                logger.info("mausam rainfall page returned HTTP %s", resp.status_code)
+                return {}
+            content = resp.text
+    except Exception as exc:
+        logger.info("mausam rainfall feed unavailable (%s)", exc)
+        return {}
+
+    # Each district is an embedded JS object: {title, id, color, info, balloonText}
+    # balloonText: <h6>NAME</h6> Date : YYYY-MM-DD / Departure : N% / Actual : N mm / Normal : N mm
+    obj_pat = re.compile(
+        r'\{\s*"title":\s*"([^"]+)"\s*,\s*"id":\s*"\d+"\s*,\s*"color":\s*"[^"]+"\s*,'
+        r'\s*"info":\s*"([^"]+)"\s*,\s*"balloonText":\s*"(.*?)"\s*\}',
+        re.S,
+    )
+    pos = 0
+    while True:
+        m = obj_pat.search(content, pos)
+        if not m:
+            break
+        pos = m.end()
+        dist = _normalise_district(m.group(1))
+        if not dist:
+            continue
+        if district_filter and dist != _normalise_district(district_filter):
+            continue
+        balloon = m.group(3)
+        actual_m = re.search(r"Actual : ([0-9.]+) mm", balloon)
+        normal_m = re.search(r"Normal : ([0-9.]+) mm", balloon)
+        if not actual_m or not normal_m:
+            continue  # "No Data" districts are skipped
+        readings[dist] = {
+            "actual": round(float(actual_m.group(1)), 1),
+            "normal": round(float(normal_m.group(1)), 1),
+        }
+
+    if readings:
+        _MAUSAM_ACTIVE = True
+        _CONNECTOR_CACHE[mausam_cache_key] = {"ts": time.time(), "data": readings}
+        logger.info("Fetched %d real district rainfall readings from mausam.imd.gov.in",
+                    len(readings))
+    else:
+        _MAUSAM_ACTIVE = False
+    return readings
+
+
 def fetch_imd_district_rainfall(
     year: Optional[int] = None,
     month: Optional[int] = None,
@@ -107,6 +244,12 @@ def fetch_imd_district_rainfall(
     now = datetime.now()
     target_year = year or now.year
     target_month = month or (now.month if now.month <= 12 else 12)
+
+    cache_key = f"rf:{target_year}:{target_month}:{district_filter or 'all'}"
+    cached = _CONNECTOR_CACHE.get(cache_key)
+    if cached and (time.time() - cached["ts"] < CACHE_TTL_SECONDS):
+        logger.debug("Returning cached IMD rainfall records for %s", cache_key)
+        return cached["data"]
 
     headers = {"User-Agent": "JalRakshak-AI/2.0"}
     if IMD_API_KEY:
@@ -122,7 +265,7 @@ def fetch_imd_district_rainfall(
 
     # 1. Attempt IMD Public API
     try:
-        with httpx.Client(timeout=10.0) as client:
+        with httpx.Client(timeout=5.0) as client:
             resp = client.get(
                 IMD_DISTRICT_RAINFALL_URL,
                 params={"state": "Gujarat", "year": target_year, "month": target_month},
@@ -140,7 +283,16 @@ def fetch_imd_district_rainfall(
     except Exception as exc:
         logger.info("IMD direct API unavailable (%s); using verified meteorological catalog baseline", exc)
 
-    # 2. If direct live stream unreachable, fetch from data.gov.in open catalog or generate verified normal derivation
+    # 2. If the keyed IMD API returned nothing (no IMD_API_KEY), pull the REAL
+    #    monthly district rainfall from the keyless mausam.imd.gov.in public feed.
+    if not district_readings:
+        global _MAUSAM_ACTIVE
+        _MAUSAM_ACTIVE = False
+        district_readings = _fetch_mausam_monthly_district_readings(
+            year=target_year, month=target_month, district_filter=district_filter
+        )
+
+    # 3. If direct live stream unreachable, fetch from data.gov.in open catalog or generate verified normal derivation
     normalized_rows: List[Dict[str, Any]] = []
 
     for v in villages:
@@ -161,7 +313,10 @@ def fetch_imd_district_rainfall(
             actual = round(reading["actual"], 1)
             hist_norm = round(reading["normal"] or hist_avg, 1)
             data_source = "live"
-            citation = "IMD Public API (api.imd.gov.in)"
+            citation = (
+                "IMD mausam.imd.gov.in (District-wise Monthly Rainfall)"
+                if _MAUSAM_ACTIVE else "IMD Public API (api.imd.gov.in)"
+            )
         else:
             # Verified meteorological baseline with monsoon anomaly calibration
             actual = round(hist_avg * 0.94, 1)
@@ -184,7 +339,8 @@ def fetch_imd_district_rainfall(
             "district": dist,
         })
 
-    logger.info("Normalised %d rainfall entries for Saurashtra villages", len(normalized_rows))
+    _CONNECTOR_CACHE[cache_key] = {"ts": time.time(), "data": normalized_rows}
+    logger.info("Normalised %d rainfall entries for Saurashtra villages (cached for %ds)", len(normalized_rows), CACHE_TTL_SECONDS)
     return normalized_rows
 
 
@@ -200,6 +356,12 @@ def fetch_cgwb_groundwater_assessments(
     target_year = year or now.year
     target_month = month or now.month
 
+    gw_cache_key = f"gw:{target_year}:{target_month}:{district_filter or 'all'}"
+    cached_gw = _CONNECTOR_CACHE.get(gw_cache_key)
+    if cached_gw and (time.time() - cached_gw["ts"] < CACHE_TTL_SECONDS):
+        logger.debug("Returning cached CGWB groundwater records for %s", gw_cache_key)
+        return cached_gw["data"]
+
     villages = _get_registered_villages()
     if district_filter:
         canonical_filter = _normalise_district(district_filter)
@@ -212,7 +374,7 @@ def fetch_cgwb_groundwater_assessments(
         v_id = v.get("village_id")
         dist = v.get("district", "Rajkot")
         profile = CGWB_DISTRICT_PROFILES.get(dist, {"mean_depth_m": 19.0, "annual_fluctuation_m": 2.5})
-        
+
         base_depth = float(v.get("groundwater_depth_m") or profile["mean_depth_m"])
         season_offset = 1.5 if target_month in (4, 5, 6) else (-1.0 if target_month in (9, 10, 11) else 0.2)
         depth = round(base_depth + season_offset, 2)
@@ -230,6 +392,7 @@ def fetch_cgwb_groundwater_assessments(
             "district": dist,
         })
 
+    _CONNECTOR_CACHE[gw_cache_key] = {"ts": time.time(), "data": gw_rows}
     return gw_rows
 
 

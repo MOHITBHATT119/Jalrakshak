@@ -204,8 +204,21 @@ export default function VillageSelect({ villages: _villages, value, onChange, wi
         [data-theme="light"] .vs-empty {
           color: #94a3b8;
         }
+        .vs-container {
+          max-width: 100%;
+        }
+        @media (max-width: 640px) {
+          .vs-container {
+            width: 100% !important;
+          }
+          .vs-dropdown {
+            width: 100% !important;
+            min-width: 260px !important;
+            max-width: calc(100vw - 20px) !important;
+          }
+        }
       `}</style>
-      <div ref={containerRef} style={{ position: 'relative', width }}>
+      <div ref={containerRef} className="vs-container" style={{ position: 'relative', width }}>
         {/* Trigger button */}
         <button
           type="button"

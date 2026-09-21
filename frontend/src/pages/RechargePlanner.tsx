@@ -271,6 +271,10 @@ function translateDynamic(value: unknown, lang: string): string {
     'farm ponds': 'ખેત તળાવો',
     'recharge well': 'રિચાર્જ કૂવો',
     'recharge wells': 'રિચાર્જ કૂવા',
+    'recharge borewell': 'રિચાર્જ બોરવેલ',
+    'recharge borewells': 'રિચાર્જ બોરવેલ',
+    'recharge borewells & shafts': 'રિચાર્જ બોરવેલ અને શાફ્ટ',
+    'recharge wells & shafts': 'રિચાર્જ કૂવા અને શાફ્ટ',
     'percolation tank': 'પરકોલેશન ટાંકી',
     'percolation tanks': 'પરકોલેશન ટાંકીઓ',
     'contour bund': 'કન્ટૂર બંડ',
@@ -368,6 +372,8 @@ function renderStructureIcon(category: string, size = 20) {
     case 'farm_pond':
       return <Waves size={size} color="#06b6d4" />;
     case 'recharge_well':
+    case 'recharge_borewell':
+    case 'recharge_borewells':
       return <ArrowDownCircle size={size} color="#3b82f6" />;
     case 'percolation_tank':
       return <Layers size={size} color="#0284c7" />;
@@ -390,6 +396,7 @@ export default function RechargePlanner({
   const [villages, setVillages] = useState<Village[]>([]);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const t = (key: string) => tr(key, lang);
   const td = (value: unknown) => translateDynamic(value, lang);
@@ -398,17 +405,24 @@ export default function RechargePlanner({
     getVillages().then(r => setVillages(Array.isArray(r?.villages) ? r.villages : [])).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (!selectedVillage) return;
-
+  const fetchAdvice = (vid: string) => {
+    if (!vid) return;
     setLoading(true);
+    setError(null);
 
-    getRechargeAdvice(selectedVillage)
+    getRechargeAdvice(vid)
       .then((d) => {
         setData(d);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setError('Unable to load recharge recommendations. Please verify backend connectivity.');
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchAdvice(selectedVillage);
   }, [selectedVillage]);
 
   return (
@@ -454,6 +468,31 @@ export default function RechargePlanner({
           <div className="loading">
             <div className="spinner" />
             {t('Analyzing recharge opportunities...')}
+          </div>
+        )}
+
+        {/* ERROR NOTICE */}
+        {error && !loading && (
+          <div className="alert alert-danger" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <AlertTriangle
+                size={16}
+                style={{
+                  display: 'inline',
+                  verticalAlign: 'middle',
+                  marginRight: 6,
+                  color: '#ef4444',
+                }}
+              />
+              {error}
+            </div>
+            <button
+              onClick={() => fetchAdvice(selectedVillage)}
+              className="btn btn-outline"
+              style={{ padding: '4px 10px', fontSize: '0.8rem' }}
+            >
+              Retry
+            </button>
           </div>
         )}
 
@@ -561,7 +600,8 @@ export default function RechargePlanner({
                   gap: 12,
                 }}
               >
-                {data.recommendations?.map((r: any) => {
+                {data.recommendations && data.recommendations.length > 0 ? (
+                  data.recommendations.map((r: any) => {
                   const priority = String(r.priority || '').toUpperCase();
 
                   return (
@@ -680,7 +720,12 @@ export default function RechargePlanner({
                       </div>
                     </div>
                   );
-                })}
+                })
+                ) : (
+                  <p className="text-sm text-muted" style={{ padding: '12px 0', textAlign: 'center' }}>
+                    {t('No additional recharge structures recommended for current hydrogeological conditions.')}
+                  </p>
+                )}
               </div>
             </div>
 

@@ -171,6 +171,15 @@ export const uploadDataCsv = (table: string, file: File) => {
   }).then(r => r.data);
 };
 
+export const createVillage = (data: Record<string, unknown>) =>
+  api.post('/data/villages', data).then(r => r.data);
+
+export const updateVillage = (villageId: string, data: Record<string, unknown>) =>
+  api.put(`/data/villages/${villageId}`, data).then(r => r.data);
+
+export const deleteVillage = (villageId: string) =>
+  api.delete(`/data/villages/${villageId}`).then(r => r.data);
+
 export const resetDataTable = (table: string) =>
   api.delete(`/data/reset/${table}`).then(r => r.data);
 
@@ -206,7 +215,8 @@ export const getWaterBudget = (id: string) => api.get<WaterBudgetResult>(`/villa
 
 export const getFullAnalysis = (id: string) => api.get(`/villages/${id}/analysis`).then(r => r.data);
 
-export const getCommunityPriority = () => api.get('/community-priority').then(r => r.data);
+export const getCommunityPriority = (params: { page?: number; limit?: number; level?: string } = {}) =>
+  api.get('/community-priority', { params }).then(r => r.data);
 
 export const getCropAdvice = (village_id: string, season = 'kharif') =>
   api.post('/crop-advice', { village_id, season }).then(r => r.data);

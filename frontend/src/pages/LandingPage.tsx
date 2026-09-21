@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Droplet, Settings, Users, Wheat, Bot, Activity, CloudRain, Sprout, Hammer, Lightbulb, ChevronRight, ShieldCheck, MapPin } from 'lucide-react';
+import { Droplet, Settings, Users, Wheat, Bot, Activity, CloudRain, Sprout, Hammer, Lightbulb, ChevronRight } from 'lucide-react';
 
 type Mode = 'farmer' | 'community' | 'admin';
 
@@ -197,16 +197,6 @@ export default function LandingPage({ setMode }: { setMode: (m: Mode) => void })
       {/* Main Content Overlay */}
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', padding: '60px 24px' }}>
         
-        {/* Header Badges */}
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '40px', animation: 'floatSmooth 8s ease-in-out infinite' }}>
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', padding: '6px 16px', borderRadius: '999px', fontSize: '0.8rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px', backdropFilter: 'blur(8px)' }}>
-            <ShieldCheck size={14} color="#22c55e" /> Validated Data
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', padding: '6px 16px', borderRadius: '999px', fontSize: '0.8rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px', backdropFilter: 'blur(8px)' }}>
-            <MapPin size={14} color="#3b82f6" /> Saurashtra Region
-          </div>
-        </div>
-
         {/* Hero Section */}
         <div style={{ textAlign: 'center', maxWidth: '900px', marginBottom: '80px' }}>
           <div className="floating-element" style={{ display: 'inline-flex', marginBottom: '24px' }}>

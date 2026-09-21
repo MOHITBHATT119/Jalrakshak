@@ -79,8 +79,11 @@ function downloadCsv(rows: string[][], filename: string) {
   URL.revokeObjectURL(url);
 }
 
-function statusColor(s: DataTableStat) {
-  return s.has_live ? '#22c55e' : '#f59e0b';
+function tableMode(stat: DataTableStat): { label: string; color: string } {
+  if (stat.has_live)            return { label: 'LIVE',      color: '#22c55e' };
+  if (stat.has_estimated)       return { label: 'ESTIMATED', color: '#3b82f6' };
+  if (stat.demo_rows > 0)       return { label: 'DEMO',      color: '#f59e0b' };
+  return                                { label: 'EMPTY',     color: '#64748b' };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -187,23 +190,23 @@ function TableCard({ tableKey, meta, stat, onRefresh }: {
     }
   };
 
-  const color = statusColor(stat);
+  const mode = tableMode(stat);
 
   return (
-    <div style={{ ...cardBase, borderLeft: `4px solid ${color}` }}>
+    <div style={{ ...cardBase, borderLeft: `4px solid ${mode.color}` }}>
 
       {/* ── Header ── */}
       <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-            <Database size={16} color={color} />
+            <Database size={16} color={mode.color} />
             <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)' }}>{meta.label}</span>
             <span style={{
-              background: `${color}22`, color, border: `1px solid ${color}55`,
+              background: `${mode.color}22`, color: mode.color, border: `1px solid ${mode.color}55`,
               borderRadius: 4, padding: '1px 7px', fontSize: '0.68rem', fontWeight: 800,
               textTransform: 'uppercase', letterSpacing: '0.05em',
             }}>
-              {stat.has_live ? 'LIVE' : 'DEMO'}
+              {mode.label}
             </span>
           </div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{meta.description}</div>
@@ -246,8 +249,11 @@ function TableCard({ tableKey, meta, stat, onRefresh }: {
       }}>
         <Stat label="Total Rows"   value={stat.total_rows.toString()} />
         <Stat label="Live Rows"    value={stat.live_rows.toString()}  color="#22c55e" />
+        <Stat label="Estimated Rows" value={stat.estimated_rows.toString()} color="#3b82f6" />
         <Stat label="Demo Rows"    value={stat.demo_rows.toString()}  color="#f59e0b" />
-        <Stat label="Last Updated" value={stat.last_updated ? new Date(stat.last_updated).toLocaleString('en-IN') : '—'} />
+        {tableKey !== 'villages' && (
+          <Stat label="Last Updated" value={stat.last_updated ? new Date(stat.last_updated).toLocaleString('en-IN') : '—'} />
+        )}
         <div style={{ marginLeft: 'auto', fontSize: '0.72rem', color: 'var(--text-muted)', maxWidth: 480, lineHeight: 1.6 }}>
           <span style={{ fontWeight: 600 }}>Required cols: </span>
           <code style={{ color: '#3b82f6', fontFamily: 'monospace', fontSize: '0.7rem' }}>{meta.requiredCols}</code>

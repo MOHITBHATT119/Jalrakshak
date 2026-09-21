@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getCommunityPriority } from '../services/api';
 import {
   Users, TrendingDown, TrendingUp, Minus, AlertTriangle,
   Droplets, CloudRain, Eye, ChevronUp, ChevronDown, Filter,
-  Activity, ShieldAlert, RefreshCw, X, ChevronRight,
+  Activity, ShieldAlert, RefreshCw, X, ChevronRight, CheckCircle, ChevronLeft,
 } from 'lucide-react';
 
 interface Props { setSelectedVillage: (v: string) => void; lang: string; }
@@ -15,11 +15,16 @@ const T: Record<string, { gu: string }> = {
   'Live ranking':                       { gu: 'જીવંત ક્રમાંક' },
   'Refresh':                            { gu: 'તાજું કરો' },
   'Ranking communities…':               { gu: 'સમુદાયો ક્રમાંકિત થઈ રહ્યા છે…' },
-  // Summary cards
+  // Summary cards & filters
+  'All':                                { gu: 'બધા' },
   'Emergency':                          { gu: 'કટોકટી' },
   'Urgent':                             { gu: 'તાત્કાળ' },
   'High':                               { gu: 'ઉચ્ચ' },
   'Medium':                             { gu: 'મધ્યમ' },
+  'Moderate':                           { gu: 'સાધારણ' },
+  'MODERATE':                           { gu: 'સાધારણ' },
+  'Low':                                { gu: 'ઓછું' },
+  'LOW':                                { gu: 'ઓછું' },
   'villages':                           { gu: 'ગામો' },
   // Table header
   'Ranked Villages by Water Priority':  { gu: 'જળ પ્રાધાન્ય અનુસાર ક્રમાંકિત ગામો' },
@@ -31,8 +36,6 @@ const T: Record<string, { gu: string }> = {
   'GW Trend':                           { gu: 'ભૂ.જ. વલણ' },
   'Key Issues':                         { gu: 'મુખ્ય સમસ્યાઓ' },
   'Action':                             { gu: 'ક્રિયા' },
-  // Filter labels
-  'All':                                { gu: 'બધા' },
   // Row
   'View':                               { gu: 'જુઓ' },
   'No villages match the selected filter.': { gu: 'પસંદ કરેલ ફિલ્ટર સાથે કોઈ ગામ મળ્યું નહીં.' },
@@ -50,6 +53,11 @@ const T: Record<string, { gu: string }> = {
   'GW Trend (modal)':                   { gu: 'ભૂ.જ. વલણ' },
   'Key Issues:':                        { gu: 'મુખ્ય સમસ્યાઓ:' },
   'Close':                              { gu: 'બંધ કરો' },
+  // Pagination
+  'Previous':                           { gu: 'પાછળ' },
+  'Next':                               { gu: 'આગળ' },
+  'Page':                               { gu: 'પાનું' },
+  'of':                                 { gu: 'માંથી' },
 };
 
 function tr(key: string, lang: string): string {
@@ -58,11 +66,11 @@ function tr(key: string, lang: string): string {
 
 // ─── colour maps ──────────────────────────────────────────────────────────────
 const LEVEL_COLOR: Record<string, string> = {
-  EMERGENCY: '#ef4444', URGENT: '#f97316', HIGH: '#f59e0b', MEDIUM: '#3b82f6', LOW: '#22c55e',
+  ALL: '#60a5fa', EMERGENCY: '#ef4444', URGENT: '#f97316', HIGH: '#f59e0b', MEDIUM: '#3b82f6', MODERATE: '#06b6d4', LOW: '#22c55e',
 };
 const LEVEL_BG: Record<string, string> = {
-  EMERGENCY: 'rgba(239,68,68,0.18)', URGENT: 'rgba(249,115,22,0.15)',
-  HIGH: 'rgba(245,158,11,0.15)', MEDIUM: 'rgba(59,130,246,0.15)', LOW: 'rgba(34,197,94,0.12)',
+  ALL: 'rgba(96,165,250,0.15)', EMERGENCY: 'rgba(239,68,68,0.18)', URGENT: 'rgba(249,115,22,0.15)',
+  HIGH: 'rgba(245,158,11,0.15)', MEDIUM: 'rgba(59,130,246,0.15)', MODERATE: 'rgba(6,182,212,0.15)', LOW: 'rgba(34,197,94,0.12)',
 };
 const RISK_COLOR: Record<string, string> = {
   SEVERE: '#ef4444', HIGH: '#f59e0b', MODERATE: '#eab308', LOW: '#22c55e',
@@ -165,40 +173,77 @@ function LevelBadge({ level, showLabel = true }: { level: string; showLabel?: bo
 }
 
 // ─── Stat summary card ────────────────────────────────────────────────────────
-function SummaryCard({ label, count, color, bg, icon, lang }: {
+function SummaryCard({ label, count, color, bg, icon, lang, active = false, onClick }: {
   label: string; count: number; color: string; bg: string; icon: React.ReactNode; lang: string;
+  active?: boolean; onClick?: () => void;
 }) {
   return (
-    <div className="stat-card" style={{
-      background: bg, borderColor: `${color}30`,
-      borderLeft: `3px solid ${color}`,
-      display: 'flex', flexDirection: 'column', gap: 8, padding: '18px 20px',
-    }}>
+    <div
+      onClick={onClick}
+      className="stat-card"
+      style={{
+        background: bg,
+        borderColor: active ? color : `${color}30`,
+        borderLeft: `4px solid ${color}`,
+        boxShadow: active ? `0 0 14px ${color}40` : undefined,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        padding: '14px 16px',
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'all 0.2s ease',
+        transform: active ? 'translateY(-2px)' : undefined,
+      }}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <span style={{ fontSize: '0.78rem', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
-        <span style={{ color, opacity: 0.7 }}>{icon}</span>
+        <span style={{ fontSize: '0.74rem', fontWeight: 800, color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+        <span style={{ color, opacity: 0.8 }}>{icon}</span>
       </div>
-      <div style={{ fontSize: '2.4rem', fontWeight: 900, color, lineHeight: 1 }}>{count}</div>
-      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{tr('villages', lang)}</div>
+      <div style={{ fontSize: '1.9rem', fontWeight: 900, color, lineHeight: 1 }}>{count}</div>
+      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{tr('villages', lang)}</div>
     </div>
   );
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 10;
+
 export default function CommunityPriority({ setSelectedVillage, lang }: Props) {
   const t = (key: string) => tr(key, lang);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [filterLevel, setFilterLevel] = useState<string>('ALL');
+  const [page, setPage] = useState<number>(1);
   const [sortBy, setSortBy] = useState<'priority' | 'health' | 'rank'>('rank');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [viewModalVillage, setViewModalVillage] = useState<any>(null);
 
-  useEffect(() => {
-    getCommunityPriority()
+  const load = useCallback((p: number, level: string) => {
+    getCommunityPriority({ page: p, limit: PAGE_SIZE, level: level === 'ALL' ? undefined : level })
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    load(1, 'ALL');
+  }, [load]);
+
+  const totalPages = Math.max(1, data?.total_pages ?? 1);
+
+  const goToPage = (p: number) => {
+    if (p < 1 || p > totalPages || p === page) return;
+    setPage(p);
+    setLoading(true);
+    load(p, filterLevel);
+  };
+
+  const onLevelClick = (lv: string) => {
+    if (lv === filterLevel) return;
+    setFilterLevel(lv);
+    setPage(1);
+    setLoading(true);
+    load(1, lv);
+  };
 
   const toggleSort = (col: typeof sortBy) => {
     if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -211,15 +256,39 @@ export default function CommunityPriority({ setSelectedVillage, lang }: Props) {
       : <ChevronDown size={13} style={{ opacity: 0.3 }} />;
 
   const villages: any[] = data?.ranked_villages ?? [];
-  const filtered = villages
-    .filter(v => filterLevel === 'ALL' || v.priority_level === filterLevel)
-    .sort((a, b) => {
-      let va = sortBy === 'rank' ? villages.indexOf(a) : sortBy === 'health' ? a.water_health_score : a.priority_score;
-      let vb = sortBy === 'rank' ? villages.indexOf(b) : sortBy === 'health' ? b.water_health_score : b.priority_score;
-      return sortDir === 'asc' ? va - vb : vb - va;
-    });
+  const filtered = [...villages].sort((a, b) => {
+    const va = sortBy === 'rank' ? villages.indexOf(a) : sortBy === 'health' ? a.water_health_score : a.priority_score;
+    const vb = sortBy === 'rank' ? villages.indexOf(b) : sortBy === 'health' ? b.water_health_score : b.priority_score;
+    return sortDir === 'asc' ? va - vb : vb - va;
+  });
 
-  const levels = ['ALL', 'EMERGENCY', 'URGENT', 'HIGH', 'MEDIUM', 'LOW'];
+  // Global rank across all matching villages (page offset + row index)
+  const pageOffset = ((data?.page ?? 1) - 1) * (data?.limit ?? PAGE_SIZE);
+
+  const pageNumbers = (): (number | '…')[] => {
+    const total = totalPages;
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const nums: (number | '…')[] = [1];
+    const start = Math.max(2, page - 1);
+    const end = Math.min(total - 1, page + 1);
+    if (start > 2) nums.push('…');
+    for (let i = start; i <= end; i++) nums.push(i);
+    if (end < total - 1) nums.push('…');
+    nums.push(total);
+    return nums;
+  };
+
+  const pagBtn = (active: boolean): React.CSSProperties => ({
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    minWidth: 30, height: 30, borderRadius: 8, cursor: 'pointer',
+    background: active ? 'rgba(59,130,246,0.2)' : 'transparent',
+    border: `1px solid ${active ? 'rgba(59,130,246,0.5)' : 'var(--border-glass)'}`,
+    color: active ? '#60a5fa' : '#475569',
+    fontWeight: active ? 800 : 600, fontSize: '0.82rem',
+    transition: 'all 0.15s',
+  });
+
+  const levels = ['ALL', 'EMERGENCY', 'URGENT', 'HIGH', 'MEDIUM', 'MODERATE', 'LOW'];
 
   return (
     <div style={{ animation: 'fadeInUp 0.5s ease-out' }}>
@@ -250,7 +319,7 @@ export default function CommunityPriority({ setSelectedVillage, lang }: Props) {
             {t('Live ranking')}
           </div>
           <button
-            onClick={() => { setLoading(true); getCommunityPriority().then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false)); }}
+            onClick={() => { setLoading(true); load(page, filterLevel); }}
             style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', color: '#60a5fa', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
           >
             <RefreshCw size={13} /> {t('Refresh')}
@@ -265,16 +334,48 @@ export default function CommunityPriority({ setSelectedVillage, lang }: Props) {
         </div>
       ) : data && (
         <>
-          {/* ── Summary cards ── */}
-          <div className="grid grid-4" style={{ marginBottom: 24 }}>
-            <SummaryCard label={t('Emergency')} count={data.emergency_count} color="#ef4444"
-              bg="rgba(239,68,68,0.07)" icon={<AlertTriangle size={18} />} lang={lang} />
-            <SummaryCard label={t('Urgent')} count={data.urgent_count} color="#f97316"
-              bg="rgba(249,115,22,0.07)" icon={<ShieldAlert size={18} />} lang={lang} />
-            <SummaryCard label={t('High')} count={data.high_count} color="#f59e0b"
-              bg="rgba(245,158,11,0.07)" icon={<CloudRain size={18} />} lang={lang} />
-            <SummaryCard label={t('Medium')} count={data.medium_count} color="#3b82f6"
-              bg="rgba(59,130,246,0.07)" icon={<Droplets size={18} />} lang={lang} />
+          {/* ── Summary cards (All, Emergency, Urgent, High, Medium, Moderate, Low) ── */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
+            gap: 12,
+            marginBottom: 24,
+          }}>
+            <SummaryCard
+              label={t('All')} count={data.total_villages ?? 0} color="#60a5fa"
+              bg="rgba(96,165,250,0.08)" icon={<Users size={16} />} lang={lang}
+              active={filterLevel === 'ALL'} onClick={() => onLevelClick('ALL')}
+            />
+            <SummaryCard
+              label={t('Emergency')} count={data.emergency_count ?? 0} color="#ef4444"
+              bg="rgba(239,68,68,0.08)" icon={<AlertTriangle size={16} />} lang={lang}
+              active={filterLevel === 'EMERGENCY'} onClick={() => onLevelClick('EMERGENCY')}
+            />
+            <SummaryCard
+              label={t('Urgent')} count={data.urgent_count ?? 0} color="#f97316"
+              bg="rgba(249,115,22,0.08)" icon={<ShieldAlert size={16} />} lang={lang}
+              active={filterLevel === 'URGENT'} onClick={() => onLevelClick('URGENT')}
+            />
+            <SummaryCard
+              label={t('High')} count={data.high_count ?? 0} color="#f59e0b"
+              bg="rgba(245,158,11,0.08)" icon={<CloudRain size={16} />} lang={lang}
+              active={filterLevel === 'HIGH'} onClick={() => onLevelClick('HIGH')}
+            />
+            <SummaryCard
+              label={t('Medium')} count={data.medium_count ?? 0} color="#3b82f6"
+              bg="rgba(59,130,246,0.08)" icon={<Droplets size={16} />} lang={lang}
+              active={filterLevel === 'MEDIUM'} onClick={() => onLevelClick('MEDIUM')}
+            />
+            <SummaryCard
+              label={t('Moderate')} count={data.moderate_count ?? 0} color="#06b6d4"
+              bg="rgba(6,182,212,0.08)" icon={<Activity size={16} />} lang={lang}
+              active={filterLevel === 'MODERATE'} onClick={() => onLevelClick('MODERATE')}
+            />
+            <SummaryCard
+              label={t('Low')} count={data.low_count ?? 0} color="#22c55e"
+              bg="rgba(34,197,94,0.08)" icon={<CheckCircle size={16} />} lang={lang}
+              active={filterLevel === 'LOW'} onClick={() => onLevelClick('LOW')}
+            />
           </div>
 
           {/* ── Table card ── */}
@@ -289,7 +390,7 @@ export default function CommunityPriority({ setSelectedVillage, lang }: Props) {
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#3b82f6', boxShadow: '0 0 8px #3b82f6' }} />
                 <span style={{ fontWeight: 700, fontSize: '1rem' }}>{t('Ranked Villages by Water Priority')}</span>
                 <span style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 20, padding: '2px 10px', fontSize: '0.75rem', fontWeight: 700 }}>
-                  {filtered.length} villages
+                  {data.total_matching} {t('villages')}
                 </span>
               </div>
 
@@ -300,7 +401,7 @@ export default function CommunityPriority({ setSelectedVillage, lang }: Props) {
                   const c = lv === 'ALL' ? '#3b82f6' : (LEVEL_COLOR[lv] ?? '#3b82f6');
                   const active = filterLevel === lv;
                   return (
-                    <button key={lv} onClick={() => setFilterLevel(lv)} style={{
+                    <button key={lv} onClick={() => onLevelClick(lv)} style={{
                       padding: '4px 12px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700,
                       cursor: 'pointer', transition: 'all 0.15s',
                       background: active ? `${c}22` : 'transparent',
@@ -348,7 +449,7 @@ export default function CommunityPriority({ setSelectedVillage, lang }: Props) {
                 <tbody>
                   {filtered.map((v: any, i: number) => {
                     const isEmergency = v.is_emergency || v.priority_level === 'EMERGENCY';
-                    const globalRank = villages.indexOf(v) + 1;
+                    const globalRank = pageOffset + villages.indexOf(v) + 1;
                     const col = LEVEL_COLOR[v.priority_level] ?? '#3b82f6';
 
                     return (
@@ -468,13 +569,45 @@ export default function CommunityPriority({ setSelectedVillage, lang }: Props) {
               )}
             </div>
 
+            {/* Pagination */}
+            <div style={{
+              padding: '14px 22px', borderTop: '1px solid rgba(255,255,255,0.06)',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10,
+            }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                {t('Page')} <strong style={{ color: '#60a5fa' }}>{page}</strong> {t('of')}{' '}
+                <strong style={{ color: '#60a5fa' }}>{totalPages}</strong> · {data.total_matching} {t('villages')}
+              </span>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => goToPage(page - 1)} disabled={page <= 1}
+                  aria-label="Previous page"
+                  style={{ ...pagBtn(false), opacity: page <= 1 ? 0.4 : 1, cursor: page <= 1 ? 'not-allowed' : 'pointer' }}
+                ><ChevronLeft size={15} /></button>
+                {pageNumbers().map((n, idx) =>
+                  n === '…' ? (
+                    <span key={`ellipsis-${idx}`} style={{ color: '#475569', padding: '4px 2px', fontSize: '0.82rem' }}>…</span>
+                  ) : (
+                    <button key={n} onClick={() => goToPage(n)} aria-label={`Page ${n}`} style={pagBtn(n === page)}>
+                      {n}
+                    </button>
+                  )
+                )}
+                <button
+                  onClick={() => goToPage(page + 1)} disabled={page >= totalPages}
+                  aria-label="Next page"
+                  style={{ ...pagBtn(false), opacity: page >= totalPages ? 0.4 : 1, cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}
+                ><ChevronRight size={15} /></button>
+              </div>
+            </div>
+
             {/* Footer note */}
             <div style={{
               padding: '12px 22px', borderTop: '1px solid rgba(255,255,255,0.04)',
               fontSize: '0.75rem', color: '#334155',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8,
             }}>
-              <span>{villages[0]?.data_note || 'Synthetic demonstration data. Not official government measurements.'}</span>
+              <span>{data.data_note || 'Synthetic demonstration data. Not official government measurements.'}</span>
               <span style={{ color: '#1e3a5c' }}>{t('Powered by IBM Granite AI')}</span>
             </div>
           </div>

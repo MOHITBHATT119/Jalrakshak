@@ -688,6 +688,28 @@ def test_data_gov_connector_normalisation():
     assert "CGWB Ground Water Assessment" in first_gw["gov_source"]
 
 
+def test_parse_mausam_district_objects():
+    """Parser extracts canonical districts + actual/normal from a mausam-style sample."""
+    from app.services.ingestion.data_gov_connector import parse_mausam_district_objects
+
+    sample = r"""
+    { "title": "GIR SOMNATH", "id": "584", "color": "#0594FF", "info": "60%",
+      "balloonText": "<h6>GIR SOMNATH<\/h6> <p><em>Date : 2026-09-21<\/br>Departure : 60%<\/br>Actual : 145.4 mm<\/br>Normal : 90.9 mm<\/em><\/p>" },
+    { "title": "JUNAGARH", "id": "583", "color": "#123456", "info": "4%",
+      "balloonText": "<h6>JUNAGARH<\/h6> <p><em>Date : 2026-09-21<\/br>Departure : 4%<\/br>Actual : 102.0 mm<\/br>Normal : 98.0 mm<\/em><\/p>" },
+    { "title": "NOTHING", "id": "999", "color": "#C0C0C0", "info": "No Data",
+      "balloonText": "No Data" },
+    """
+    readings = parse_mausam_district_objects(sample)
+    assert readings == {
+        "Gir Somnath": {"actual": 145.4, "normal": 90.9},
+        "Junagadh":    {"actual": 102.0, "normal": 98.0},
+    }, readings
+
+    filtered = parse_mausam_district_objects(sample, district_filter="Junagadh")
+    assert list(filtered.keys()) == ["Junagadh"]
+
+
 def test_scheduler_service_lifecycle():
     """Scheduler starts and stops cleanly without unhandled exceptions."""
     from app.services.scheduler import start_scheduler, shutdown_scheduler
@@ -821,3 +843,51 @@ def test_login_audit_trail_recorded():
     assert recent["identifier"] == "admin"
     assert recent["success"] is False
     assert "failure_reason" in recent
+
+
+# ============================================================
+# Village CRUD (admin-managed, persisted to backend)
+# ============================================================
+
+def test_village_crud_create_update_delete():
+    """Admin can create, update, and delete a village via /data/villages."""
+    r_adm = client.post("/api/v1/auth/login", json={"username": "admin", "password": "admin@123"})
+    assert r_adm.status_code == 200
+    headers = {"Authorization": f"Bearer {r_adm.json()['access_token']}"}
+
+    import uuid
+    test_id = f"TST{uuid.uuid4().hex[:6].upper()}"
+
+    # Create (no village_id → backend auto-generates a VU### id)
+    r_create = client.post("/api/v1/data/villages", json={
+        "name": f"Test Village {test_id}",
+        "district": "Rajkot",
+        "taluka": "Rajkot",
+        "population": 12345,
+        "agricultural_area_ha": 100.5,
+        "primary_crops": "Cotton, Wheat",
+        "aquifer_type": "Alluvial",
+    }, headers=headers)
+    assert r_create.status_code == 200, r_create.text
+    created = r_create.json()["village"]
+    auto_id = created["village_id"]
+    assert auto_id.startswith("VU"), f"expected auto-generated VU id, got {auto_id}"
+
+    # Update
+    r_update = client.put(f"/api/v1/data/villages/{auto_id}", json={
+        "name": f"Test Village Updated {auto_id}",
+        "population": 54321,
+    }, headers=headers)
+    assert r_update.status_code == 200, r_update.text
+    assert r_update.json()["village"]["population"] == 54321
+    assert r_update.json()["village"]["taluka"] == "Rajkot"  # not wiped
+
+    # Delete + dependent cleanup
+    r_del = client.delete(f"/api/v1/data/villages/{auto_id}", headers=headers)
+    assert r_del.status_code == 200, r_del.text
+    r_del2 = client.delete(f"/api/v1/data/villages/{auto_id}", headers=headers)
+    assert r_del2.status_code == 404  # gone
+
+    # Unauthorized: no token must be rejected
+    r_anon = client.post("/api/v1/data/villages", json={"name": "X"})
+    assert r_anon.status_code == 401

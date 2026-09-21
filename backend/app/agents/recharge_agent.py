@@ -34,82 +34,96 @@ def get_recharge_advice(village_id: str) -> dict:
 
     recommendations = []
 
-    # Check dam recommendations
-    if aquifer_type in ["alluvial", "coastal"] and annual_rainfall >= 400:
+    # 1. Check dam recommendations (suitable across seasonal stream drainage in Saurashtra)
+    if annual_rainfall >= 350:
         priority = "HIGH" if severity in ["CRITICAL", "HIGH"] else "MEDIUM"
         existing_dams = existing_counts.get("check_dam", 0)
-        estimated_additional = max(0, (ag_area_ha // 2500) - existing_dams)
-        if estimated_additional > 0:
+        target_dams = max(2, ag_area_ha // 600)
+        estimated_additional = max(1 if severity in ["CRITICAL", "HIGH"] else 0, target_dams - existing_dams)
+        if estimated_additional > 0 or existing_dams == 0:
+            count = max(1, estimated_additional)
+            potential = round(count * 0.45, 2)
             recommendations.append({
                 "category": "check_dam",
                 "display_name": "Check Dams",
                 "priority": priority,
-                "estimated_count": estimated_additional,
-                "potential_recharge_mcm": round(estimated_additional * 0.8, 1),
+                "estimated_count": count,
+                "potential_recharge_mcm": potential,
                 "existing_count": existing_dams,
-                "rationale": f"Check dams on seasonal streams can recharge {estimated_additional * 0.8:.1f} MCM/year in alluvial aquifers",
+                "rationale": f"Check dams on drainage streams capture monsoon runoff and recharge {potential:.1f} MCM/year into local {aquifer_type} formations",
                 "suitable_for_aquifer": aquifer_type,
                 "cost_category": "medium",
             })
 
-    # Farm ponds
-    if ag_area_ha > 10000:
+    # 2. Farm ponds (Khet Talavadi - applicable to all farm sizes in Gujarat)
+    if ag_area_ha >= 400:
         priority = "HIGH" if severity in ["CRITICAL", "HIGH"] else "MEDIUM"
         existing_ponds = existing_counts.get("farm_pond", 0)
-        estimated_ponds = max(0, (ag_area_ha // 500) - existing_ponds)
+        target_ponds = max(6, ag_area_ha // 100)
+        estimated_ponds = max(2, target_ponds - existing_ponds)
+        potential_ponds = round(estimated_ponds * 0.04, 2)
         recommendations.append({
             "category": "farm_pond",
             "display_name": "Farm Ponds",
             "priority": priority,
-            "estimated_count": min(estimated_ponds, 200),
-            "potential_recharge_mcm": round(min(estimated_ponds, 200) * 0.05, 1),
+            "estimated_count": estimated_ponds,
+            "potential_recharge_mcm": potential_ponds,
             "existing_count": existing_ponds,
-            "rationale": "Farm ponds store monsoon runoff and recharge groundwater through seepage",
+            "rationale": "On-farm ponds harvest direct rainfall and augment local groundwater through sub-surface seepage",
             "suitable_for_aquifer": "all",
             "cost_category": "low",
         })
 
-    # Recharge wells (hard rock areas)
-    if aquifer_type == "hard_rock":
-        priority = "HIGH" if severity in ["CRITICAL", "HIGH"] else "MEDIUM"
-        existing_wells = existing_counts.get("recharge_well", 0)
-        estimated_wells = max(0, (ag_area_ha // 150) - existing_wells)
-        recommendations.append({
-            "category": "recharge_well",
-            "display_name": "Recharge Wells",
-            "priority": priority,
-            "estimated_count": min(estimated_wells, 500),
-            "potential_recharge_mcm": round(min(estimated_wells, 500) * 0.01, 1),
-            "existing_count": existing_wells,
-            "rationale": "Recharge wells directly inject rainwater/runoff into hard rock aquifer fractures",
-            "suitable_for_aquifer": "hard_rock",
-            "cost_category": "low",
-        })
+    # 3. Recharge wells / Injection Borewells & Shafts
+    existing_wells = existing_counts.get("recharge_well", 0) + existing_counts.get("recharge_borewell", 0)
+    target_wells = max(5, ag_area_ha // 120)
+    estimated_wells = max(2, target_wells - existing_wells)
+    priority_wells = "HIGH" if severity in ["CRITICAL", "HIGH"] else ("HIGH" if aquifer_type == "hard_rock" else "MEDIUM")
+    potential_wells = round(estimated_wells * 0.02, 2)
+    recommendations.append({
+        "category": "recharge_well",
+        "display_name": "Recharge Borewells & Shafts",
+        "priority": priority_wells,
+        "estimated_count": estimated_wells,
+        "potential_recharge_mcm": potential_wells,
+        "existing_count": existing_wells,
+        "rationale": f"Direct aquifer injection wells and filtration shafts recharge permeable strata ({aquifer_type}) during high-intensity monsoons",
+        "suitable_for_aquifer": aquifer_type,
+        "cost_category": "low",
+    })
 
-    # Percolation tanks
-    if annual_rainfall >= 500:
+    # 4. Percolation tanks (community percolation storage)
+    if annual_rainfall >= 400 and ag_area_ha >= 800:
+        existing_tanks = existing_counts.get("percolation_tank", 0)
+        target_tanks = max(1, ag_area_ha // 2000)
+        estimated_tanks = max(1, target_tanks - existing_tanks)
+        potential_tanks = round(estimated_tanks * 0.8, 2)
         recommendations.append({
             "category": "percolation_tank",
             "display_name": "Percolation Tanks",
             "priority": "MEDIUM",
-            "estimated_count": max(1, ag_area_ha // 8000),
-            "potential_recharge_mcm": round((ag_area_ha // 8000) * 2.5, 1),
-            "existing_count": existing_counts.get("percolation_tank", 0),
-            "rationale": "Percolation tanks slow runoff and allow groundwater recharge over large areas",
+            "estimated_count": estimated_tanks,
+            "potential_recharge_mcm": potential_tanks,
+            "existing_count": existing_tanks,
+            "rationale": "Community percolation tanks retard surface discharge and promote deep infiltration over larger catchment areas",
             "suitable_for_aquifer": "all",
             "cost_category": "medium",
         })
 
-    # Contour bunds (watershed)
-    if aquifer_type in ["hard_rock"] or ag_area_ha > 25000:
+    # 5. Contour bunds & trenches (catchment soil & water conservation)
+    if ag_area_ha >= 500:
+        existing_bunds = existing_counts.get("contour_bund", 0)
+        target_bunds = max(4, ag_area_ha // 350)
+        estimated_bunds = max(2, target_bunds - existing_bunds)
+        potential_bunds = round(estimated_bunds * 0.12, 2)
         recommendations.append({
             "category": "contour_bund",
             "display_name": "Contour Bunds & Trenches",
             "priority": "MEDIUM",
-            "estimated_count": max(5, ag_area_ha // 1000),
-            "potential_recharge_mcm": round((ag_area_ha // 1000) * 0.3, 1),
-            "existing_count": existing_counts.get("contour_bund", 0),
-            "rationale": "Contour bunds reduce runoff velocity, increase infiltration across watershed",
+            "estimated_count": estimated_bunds,
+            "potential_recharge_mcm": potential_bunds,
+            "existing_count": existing_bunds,
+            "rationale": "Contour trenches and earthen bunds reduce runoff velocity and maximize field-scale percolation across undulating slopes",
             "suitable_for_aquifer": "all",
             "cost_category": "low",
         })

@@ -5,18 +5,15 @@ import {
   MapPin, Plus, Search, RefreshCw, Eye, Pencil, Trash2,
   X, AlertCircle, CheckCircle, Waves, Droplet,
   BarChart2, Sprout, ExternalLink,
-  Info, Loader2, AlertTriangle,
+  Loader2, AlertTriangle,
 } from 'lucide-react';
 import {
   getVillages, getWaterHealth, getGroundwater, getDroughtRisk,
-  getWaterBudget, getHealth, Village,
+  getWaterBudget, getHealth, createVillage, updateVillage, deleteVillage, Village,
   WaterHealthResult, GroundwaterResult, DroughtResult, WaterBudgetResult,
 } from '../../services/api';
 
-// ─── LocalStorage keys ────────────────────────────────────────────────────────
-const LS_EXTRA = 'jalrakshak_villages_extra'; // extra fields not in API
-
-// ─── Extended village record (merges API + extra fields) ─────────────────────
+// ─── Extended village record (merges API fields) ─────────────────────────────
 interface VillageRecord {
   village_id: string;
   name: string;
@@ -41,14 +38,6 @@ interface VillageRecord {
   gwSeverity?: string;
 }
 
-interface ExtraFields {
-  [village_id: string]: {
-    taluka: string;
-    households: number;
-    area_ha: number;
-  };
-}
-
 // ─── Add-Village form ─────────────────────────────────────────────────────────
 interface AddForm {
   name: string;
@@ -68,24 +57,6 @@ const DISTRICTS = [
   'Jamnagar','Junagadh','Kheda','Kutch','Mahisagar','Mehsana',
   'Morbi','Narmada','Navsari','Panchmahal','Patan','Porbandar',
   'Rajkot','Sabarkantha','Surat','Surendranagar','Tapi','Vadodara','Valsad',
-];
-
-// ─── Demo seed villages — realistic mixed risk distribution ──────────────────
-// These match the actual backend village IDs (V001–V010) so API calls work.
-// droughtRiskLevel is left undefined here; it gets filled by background API
-// calls (getDroughtRisk) after load. The values below are used only when the
-// backend is completely offline AND the API fetch fails.
-const SEED_DEMO: VillageRecord[] = [
-  { village_id: 'V001', name: 'Rajkot',              district: 'Rajkot',          taluka: 'Rajkot',          population: 1500000, households: 300000, area_ha: 45000, primary_crops: 'Cotton, Groundnut, Wheat',     lat: 22.30, lon: 70.80, annual_rainfall_mm: 650, groundwater_depth_m: 18.5, aquifer_type: 'Alluvial',   isDemo: true, droughtRiskLevel: 'HIGH',     gwTrend: 'DECLINING' },
-  { village_id: 'V002', name: 'Junagadh',            district: 'Junagadh',        taluka: 'Junagadh',        population:  320000, households:  64000, area_ha: 38000, primary_crops: 'Groundnut, Cotton, Millet',    lat: 21.52, lon: 70.46, annual_rainfall_mm: 750, groundwater_depth_m: 14.2, aquifer_type: 'Alluvial',   isDemo: true, droughtRiskLevel: 'MEDIUM',   gwTrend: 'STABLE'    },
-  { village_id: 'V003', name: 'Amreli',              district: 'Amreli',          taluka: 'Amreli',          population:   58000, households:  11600, area_ha: 42000, primary_crops: 'Groundnut, Cotton, Castor',    lat: 21.60, lon: 71.22, annual_rainfall_mm: 600, groundwater_depth_m: 22.1, aquifer_type: 'Hard Rock',  isDemo: true, droughtRiskLevel: 'HIGH',     gwTrend: 'DECLINING' },
-  { village_id: 'V004', name: 'Bhavnagar',           district: 'Bhavnagar',       taluka: 'Bhavnagar',       population:  593000, households: 118600, area_ha: 35000, primary_crops: 'Wheat, Cotton, Sesame',        lat: 21.76, lon: 72.15, annual_rainfall_mm: 550, groundwater_depth_m: 25.3, aquifer_type: 'Alluvial',   isDemo: true, droughtRiskLevel: 'CRITICAL', gwTrend: 'CRITICAL'  },
-  { village_id: 'V005', name: 'Jamnagar',            district: 'Jamnagar',        taluka: 'Jamnagar',        population:  479000, households:  95800, area_ha: 40000, primary_crops: 'Groundnut, Cotton, Vegetables', lat: 22.47, lon: 70.06, annual_rainfall_mm: 680, groundwater_depth_m: 16.8, aquifer_type: 'Alluvial',   isDemo: true, droughtRiskLevel: 'MEDIUM',   gwTrend: 'STABLE'    },
-  { village_id: 'V006', name: 'Porbandar',           district: 'Porbandar',       taluka: 'Porbandar',       population:  133000, households:  26600, area_ha: 18000, primary_crops: 'Groundnut, Millet, Vegetables', lat: 21.64, lon: 69.63, annual_rainfall_mm: 720, groundwater_depth_m: 12.5, aquifer_type: 'Coastal',    isDemo: true, droughtRiskLevel: 'LOW',      gwTrend: 'STABLE'    },
-  { village_id: 'V007', name: 'Surendranagar',       district: 'Surendranagar',   taluka: 'Surendranagar',   population:  180000, households:  36000, area_ha: 55000, primary_crops: 'Cotton, Wheat, Castor',        lat: 22.73, lon: 71.65, annual_rainfall_mm: 450, groundwater_depth_m: 28.7, aquifer_type: 'Hard Rock',  isDemo: true, droughtRiskLevel: 'CRITICAL', gwTrend: 'CRITICAL'  },
-  { village_id: 'V008', name: 'Morbi',               district: 'Morbi',           taluka: 'Morbi',           population:  196000, households:  39200, area_ha: 32000, primary_crops: 'Cotton, Groundnut, Wheat',     lat: 22.82, lon: 70.84, annual_rainfall_mm: 500, groundwater_depth_m: 24.2, aquifer_type: 'Alluvial',   isDemo: true, droughtRiskLevel: 'HIGH',     gwTrend: 'DECLINING' },
-  { village_id: 'V009', name: 'Gir Somnath',         district: 'Gir Somnath',     taluka: 'Gir Somnath',     population:  120000, households:  24000, area_ha: 28000, primary_crops: 'Groundnut, Mango, Cotton',     lat: 20.91, lon: 70.37, annual_rainfall_mm: 780, groundwater_depth_m: 11.3, aquifer_type: 'Hard Rock',  isDemo: true, droughtRiskLevel: 'LOW',      gwTrend: 'IMPROVING' },
-  { village_id: 'V010', name: 'Devbhumi Dwarka',     district: 'Devbhumi Dwarka', taluka: 'Devbhumi Dwarka', population:   45000, households:   9000, area_ha: 22000, primary_crops: 'Groundnut, Cotton, Millet',    lat: 22.24, lon: 68.97, annual_rainfall_mm: 600, groundwater_depth_m: 19.8, aquifer_type: 'Coastal',    isDemo: true, droughtRiskLevel: 'MEDIUM',   gwTrend: 'DECLINING' },
 ];
 
 function riskColor(level?: string) {
@@ -115,24 +86,15 @@ function gwTrendColor(t?: string) {
 }
 function fmtNum(n?: number) { return n != null ? n.toLocaleString() : '—'; }
 
-function loadExtra(): ExtraFields {
-  try { const r = localStorage.getItem(LS_EXTRA); if (r) return JSON.parse(r); } catch { /**/ }
-  return {};
-}
-function saveExtra(e: ExtraFields) {
-  try { localStorage.setItem(LS_EXTRA, JSON.stringify(e)); } catch { /**/ }
-}
-
-function mergeExtra(v: Village, extra: ExtraFields): VillageRecord {
-  const ex = extra[v.village_id] || {};
+function mergeExtra(v: Village): VillageRecord {
   return {
     village_id: v.village_id,
     name: v.name,
     district: v.district,
-    taluka: (ex as any).taluka || v.district,
+    taluka: v.taluka || v.district,
     population: v.population,
-    households: (ex as any).households || Math.round(v.population / 5),
-    area_ha: (ex as any).area_ha || v.agricultural_area_ha,
+    households: Math.round(v.population / 5),
+    area_ha: v.agricultural_area_ha || 0,
     primary_crops: v.primary_crops,
     lat: v.lat,
     lon: v.lon,
@@ -292,8 +254,6 @@ export default function Villages() {
 
   // Backend village list
   const [apiVillages, setApiVillages]   = useState<VillageRecord[]>([]);
-  const [demoVillages, setDemoVillages] = useState<VillageRecord[]>([]);
-  const [extra, setExtra]               = useState<ExtraFields>(loadExtra);
   const [isDemo, setIsDemo]             = useState(true);
   const [loading, setLoading]           = useState(true);
 
@@ -326,38 +286,41 @@ export default function Villages() {
 
   // Toast
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // ── Load data ────────────────────────────────────────────────────────────────
+  const patchRisks = (records: VillageRecord[]) => {
+    // ── Background: fetch real drought risk for every village ──────────
+    // Fire all requests in parallel; patch each result into state as it
+    // arrives so the chart updates progressively — no blocking.
+    records.forEach(rec => {
+      getDroughtRisk(rec.village_id)
+        .then(risk => {
+          setApiVillages(prev =>
+            prev.map(r =>
+              r.village_id === rec.village_id
+                ? { ...r, droughtRiskLevel: risk.risk_level, droughtRiskScore: risk.risk_score }
+                : r
+            )
+          );
+        })
+        .catch(() => { /* leave undefined — chart shows dash */ });
+    });
+  };
+
+  const reloadVillages = (): Promise<void> =>
+    getVillages()
+      .then(d => {
+        const records = (Array.isArray(d?.villages) ? d.villages : []).map(v => mergeExtra(v));
+        setApiVillages(records);
+        patchRisks(records);
+      })
+      .catch(() => setApiVillages([]));
+
   useEffect(() => {
     getHealth().then(h => setIsDemo(h.demo_mode)).catch(() => {});
     setLoading(true);
-    getVillages()
-      .then(d => {
-        const records = (Array.isArray(d?.villages) ? d.villages : []).map(v => mergeExtra(v, extra));
-        setApiVillages(records);
-
-        // ── Background: fetch real drought risk for every village ──────────
-        // Fire all requests in parallel; patch each result into state as it
-        // arrives so the chart updates progressively — no blocking.
-        records.forEach(rec => {
-          getDroughtRisk(rec.village_id)
-            .then(risk => {
-              setApiVillages(prev =>
-                prev.map(r =>
-                  r.village_id === rec.village_id
-                    ? { ...r, droughtRiskLevel: risk.risk_level, droughtRiskScore: risk.risk_score }
-                    : r
-                )
-              );
-            })
-            .catch(() => { /* leave undefined — chart shows dash */ });
-        });
-      })
-      .catch(() => {
-        // Backend unavailable — use seed demo data (risk already pre-set)
-        setDemoVillages(SEED_DEMO);
-      })
-      .finally(() => setLoading(false));
+    reloadVillages().finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -367,12 +330,8 @@ export default function Villages() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  // All villages combined
-  const allVillages: VillageRecord[] = apiVillages.length > 0
-    ? [...apiVillages, ...demoVillages]
-    : demoVillages.length > 0
-      ? demoVillages
-      : SEED_DEMO;
+  // All villages (from the live backend — no synthetic seeds)
+  const allVillages: VillageRecord[] = apiVillages;
 
   // ── Filters ──────────────────────────────────────────────────────────────────
   const districtOptions = [...new Set(allVillages.map(v => v.district))].sort();
@@ -426,24 +385,28 @@ export default function Villages() {
     return Object.keys(e).length === 0;
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!validateAdd()) return;
-    const id = `VU-${Date.now()}`;
-    const newV: VillageRecord = {
-      village_id: id, name: form.name.trim(), district: form.district,
-      taluka: form.taluka.trim(), population: Number(form.population),
-      households: Number(form.households) || Math.round(Number(form.population) / 5),
-      area_ha: Number(form.area_ha) || 0,
-      primary_crops: form.primary_crops.trim() || '—',
-      lat: 0, lon: 0, annual_rainfall_mm: 0, groundwater_depth_m: 0,
-      aquifer_type: 'Unknown', isDemo: true,
-    };
-    setDemoVillages(prev => [newV, ...prev]);
-    // Persist extra fields
-    const newExtra = { ...extra, [id]: { taluka: newV.taluka, households: newV.households, area_ha: newV.area_ha } };
-    setExtra(newExtra); saveExtra(newExtra);
-    setShowAdd(false); setForm(BLANK_FORM); setErrors({});
-    setToast({ msg: `Village "${newV.name}" added successfully.`, ok: true });
+    setSaving(true);
+    try {
+      await createVillage({
+        name: form.name.trim(),
+        district: form.district,
+        taluka: form.taluka.trim(),
+        population: Number(form.population),
+        agricultural_area_ha: Number(form.area_ha) || null,
+        primary_crops: form.primary_crops.trim() || null,
+        lat: 0, lon: 0, annual_rainfall_mm: null, groundwater_depth_m: null,
+        aquifer_type: 'Unknown',
+      });
+      await reloadVillages();
+      setShowAdd(false); setForm(BLANK_FORM); setErrors({});
+      setToast({ msg: `Village "${form.name.trim()}" added successfully.`, ok: true });
+    } catch {
+      setToast({ msg: 'Could not save village. Check the backend and try again.', ok: false });
+    } finally {
+      setSaving(false);
+    }
   };
 
   // ── Edit village ──────────────────────────────────────────────────────────────
@@ -453,36 +416,50 @@ export default function Villages() {
     setEditErrors({});
   };
 
-  const handleEditSave = () => {
+  const handleEditSave = async () => {
     const e: Record<string, string> = {};
     if (!String(editForm.name || '').trim()) e.name = 'Name is required.';
     if (!editForm.district) e.district = 'District is required.';
     if (editErrors !== e) setEditErrors(e);
     if (Object.keys(e).length) return;
+    if (!editVillage) return;
 
-    const update = (list: VillageRecord[]) =>
-      list.map(v => v.village_id === editVillage!.village_id ? { ...v, ...editForm } : v);
-    setApiVillages(prev => update(prev));
-    setDemoVillages(prev => update(prev));
-
-    const newExtra = { ...extra, [editVillage!.village_id]: {
-      taluka: String(editForm.taluka || editVillage!.taluka),
-      households: Number(editForm.households) || editVillage!.households,
-      area_ha: Number(editForm.area_ha) || editVillage!.area_ha,
-    }};
-    setExtra(newExtra); saveExtra(newExtra);
-    setEditVillage(null);
-    setToast({ msg: `Village "${editForm.name}" updated.`, ok: true });
+    setSaving(true);
+    try {
+      await updateVillage(editVillage.village_id, {
+        name: String(editForm.name || '').trim(),
+        district: editForm.district,
+        taluka: String(editForm.taluka || editVillage.taluka),
+        population: editForm.population,
+        agricultural_area_ha: Number(editForm.area_ha) || null,
+        primary_crops: String(editForm.primary_crops || editVillage.primary_crops || ''),
+      });
+      await reloadVillages();
+      setEditVillage(null);
+      setToast({ msg: `Village "${editForm.name}" updated.`, ok: true });
+    } catch {
+      setToast({ msg: 'Could not update village. Check the backend and try again.', ok: false });
+    } finally {
+      setSaving(false);
+    }
   };
 
   // ── Delete ────────────────────────────────────────────────────────────────────
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return;
     const id = deleteTarget.village_id;
-    setApiVillages(prev => prev.filter(v => v.village_id !== id));
-    setDemoVillages(prev => prev.filter(v => v.village_id !== id));
-    setToast({ msg: `Village "${deleteTarget.name}" removed.`, ok: true });
-    setDeleteTarget(null);
+    setSaving(true);
+    try {
+      await deleteVillage(id);
+      await reloadVillages();
+      setDeleteTarget(null);
+      if (viewVillage?.village_id === id) setViewVillage(null);
+      setToast({ msg: `Village "${deleteTarget.name}" removed.`, ok: true });
+    } catch {
+      setToast({ msg: 'Could not remove village. Check the backend and try again.', ok: false });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const modalOpen = !!viewVillage || !!editVillage || !!deleteTarget || showAdd;
@@ -921,7 +898,11 @@ export default function Villages() {
               </thead>
               <tbody>
                 {filtered.length === 0 && (
-                  <tr><td colSpan={9} style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>No villages match the current filters.</td></tr>
+                  <tr><td colSpan={9} style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    {allVillages.length === 0
+                      ? 'No villages found. Connect the backend or add a village above.'
+                      : 'No villages match the current filters.'}
+                  </td></tr>
                 )}
                 {filtered.map((v, i) => (
                   <tr key={v.village_id} style={{ borderBottom: '1px solid var(--border-glass)', background: i % 2 === 0 ? 'transparent' : 'var(--bg-card-hover)', transition: 'background 0.15s' }}>
@@ -1017,14 +998,6 @@ export default function Villages() {
           </div>
         )}
       </div>
-
-      {/* ── DEMO DATA NOTE ────────────────────────────────────────────────────── */}
-      {allVillages.some(v => v.isDemo) && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', marginBottom: 16, fontSize: '0.78rem', color: '#f59e0b' }}>
-          <Info size={14} style={{ marginTop: 1, flexShrink: 0 }} />
-          <span>Rows labelled <strong>Demo</strong> are synthetic seed data used when the backend API is unavailable or returns no villages. Connect the backend to see live data.</span>
-        </div>
-      )}
 
     </div>
   );

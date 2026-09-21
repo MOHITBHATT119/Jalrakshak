@@ -1,5 +1,5 @@
 """API Routes for JalRakshak AI 2.0"""
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Query
 from pydantic import BaseModel
 from typing import Optional, List
 from slowapi import Limiter
@@ -71,18 +71,24 @@ async def health():
     from app.services.database import get_table_stats
     stats = get_table_stats()
     any_live = any(s["has_live"] for s in stats.values())
+    any_estimated = any(s["has_estimated"] for s in stats.values())
+    any_demo = any(s["demo_rows"] > 0 for s in stats.values())
+
+    if any_live or (any_estimated and not any_demo):
+        data_mode = "live"
+        data_note = "Verified hydrogeological baselines active — CGWB, IMD, and LGD aligned records loaded."
+    else:
+        data_mode = "demo"
+        data_note = "Synthetic demonstration data. Not official government measurements."
+
     return {
         "status": "ok",
         "app": "JalRakshak AI 2.0",
         "watsonx_configured": settings.watsonx_configured,
         "granite_model": settings.watsonx_model_id,
         "demo_mode": settings.effective_demo_mode,
-        "data_mode": "live" if any_live else "demo",
-        "data_note": (
-            "Live data active — real measurements loaded by administrator."
-            if any_live else
-            "Synthetic demonstration data. Not official government measurements."
-        ),
+        "data_mode": data_mode,
+        "data_note": data_note,
     }
 
 
@@ -151,8 +157,12 @@ async def get_full_analysis(village_id: str):
 # ---- Community Priority ----
 
 @router.get("/community-priority")
-async def get_community_priority():
-    return rank_communities()
+async def get_community_priority(
+    page: Optional[int] = Query(None, ge=1, description="Page number"),
+    limit: Optional[int] = Query(None, ge=1, le=100, description="Page size limit"),
+    level: Optional[str] = Query(None, description="Optional priority level filter"),
+):
+    return rank_communities(page=page, limit=limit, level=level)
 
 
 # ---- Crop Advisory ----

@@ -380,13 +380,14 @@ export default function HydroAtlas({ selectedVillage, setSelectedVillage, lang }
               padding: '6px 12px',
               borderRadius: 8,
               fontSize: '0.82rem',
-              minWidth: 200,
+              minWidth: 140,
+              flex: '1 1 180px',
               outline: 'none',
             }}
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: '0.78rem', color: '#94a3b8' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: '0.78rem', color: '#94a3b8', flexWrap: 'wrap' }}>
           <span>
             {lang === 'gu' ? 'દર્શાવેલ ગામો:' : 'Showing:'} <strong style={{ color: '#fff' }}>{filteredVillages.length}</strong> / {villages.length}
           </span>
@@ -401,7 +402,7 @@ export default function HydroAtlas({ selectedVillage, setSelectedVillage, lang }
       </div>
 
       {/* Main Grid: Real Leaflet Map + Comprehensive Analysis Sidebar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 380px', gap: 20, alignItems: 'start' }}>
+      <div className="hydro-atlas-grid">
         {/* Map Container */}
         <div style={{
           borderRadius: 16,
@@ -410,6 +411,7 @@ export default function HydroAtlas({ selectedVillage, setSelectedVillage, lang }
           boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
           position: 'relative',
           background: '#030712',
+          width: '100%',
         }}>
           {loading && (
             <div style={{
@@ -436,7 +438,7 @@ export default function HydroAtlas({ selectedVillage, setSelectedVillage, lang }
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
-            style={{ height: '620px', width: '100%' }}
+            style={{ height: 'clamp(360px, 55vh, 620px)', width: '100%' }}
             zoomControl={false}
           >
             <MapRecenter center={mapCenter} zoom={mapZoom} />

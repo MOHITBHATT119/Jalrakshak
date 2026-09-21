@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink, Navigate, Link, useNavigate } from 'react-router-dom';
 import { Sun, Moon, Menu, X, Sprout, LogOut, User } from 'lucide-react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -67,6 +67,7 @@ function TopNav({ mode, setMode, demoMode, lang, setLang }: {
   mode: Mode; setMode: (m: Mode) => void;
   demoMode: boolean; lang: 'en' | 'gu'; setLang: (l: 'en' | 'gu') => void;
 }) {
+  const navigate = useNavigate();
   const t = (en: string, gu: string) => lang === 'gu' ? gu : en;
   const { theme, toggleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -119,7 +120,10 @@ function TopNav({ mode, setMode, demoMode, lang, setLang }: {
                 <span className="hide-xs">{farmerUser.name}</span>
               </NavLink>
               <button
-                onClick={farmerLogout}
+                onClick={() => {
+                  farmerLogout();
+                  navigate('/');
+                }}
                 title="Log out from farmer account"
                 style={{
                   background: 'none',
@@ -213,10 +217,40 @@ function TopNav({ mode, setMode, demoMode, lang, setLang }: {
               </NavLink>
             ))}
             <div style={{ borderTop: '1px solid var(--border-glass)', marginTop: 12, paddingTop: 12 }}>
-              <NavLink to="/farmer/dashboard" onClick={() => setMobileOpen(false)}
-                style={{display:'flex', gap:'10px', alignItems:'center', color: '#34d399'}}>
-                <Sprout size={16} /> Farmer Hub
-              </NavLink>
+              {isFarmerAuthenticated ? (
+                <>
+                  <NavLink to="/farmer/dashboard" onClick={() => setMobileOpen(false)}
+                    style={{display:'flex', gap:'10px', alignItems:'center', color: '#34d399'}}>
+                    <Sprout size={16} /> Farmer Hub ({farmerUser?.name})
+                  </NavLink>
+                  <button
+                    onClick={() => {
+                      setMobileOpen(false);
+                      farmerLogout();
+                      navigate('/');
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#f87171',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '8px 0',
+                      width: '100%',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    <LogOut size={16} /> {lang === 'gu' ? 'લૉગ આઉટ' : 'Sign Out'}
+                  </button>
+                </>
+              ) : (
+                <NavLink to="/farmer/login" onClick={() => setMobileOpen(false)}
+                  style={{display:'flex', gap:'10px', alignItems:'center', color: '#34d399'}}>
+                  <Sprout size={16} /> {lang === 'gu' ? 'ખેડૂત લૉગિન' : 'Farmer Login'}
+                </NavLink>
+              )}
               <NavLink to="/admin/login" onClick={() => setMobileOpen(false)}
                 style={{display:'flex', gap:'10px', alignItems:'center', color: '#3b82f6', marginTop: 8}}>
                 <User size={16} /> Admin Command

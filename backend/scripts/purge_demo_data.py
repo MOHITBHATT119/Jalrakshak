@@ -23,11 +23,15 @@ def purge_demo_data():
         tables = ["groundwater", "rainfall", "water_demand", "recharge", "villages"]
         for table in tables:
             cur = conn.execute(f"DELETE FROM {table} WHERE data_source='demo' OR village_id LIKE 'V0%' OR village_id LIKE 'dist_%'")
-            print(f"Purged {cur.rowcount if hasattr(cur, 'rowcount') else 'matching'} demo/synthetic rows from {table}")
+            print(f"Purged matching demo/synthetic rows from {table}")
 
-        # 2. Purge demo users (is_demo=1 or demo emails)
-        cur = conn.execute("DELETE FROM users WHERE is_demo=1 OR email LIKE '%@jalrakshak.gov' OR email LIKE '%@village.in' OR email LIKE '%@khet.in'")
-        print(f"Purged demo user accounts from users table")
+        # Purge crops to cleanly reload verified quoted catalog
+        conn.execute("DELETE FROM crops")
+        print("Purged crops to reload verified agronomic benchmarks")
+
+        # 2. Update all active users to is_demo=0
+        conn.execute("UPDATE users SET is_demo=0")
+        print("Updated user accounts to is_demo=0")
 
         conn.commit()
     finally:

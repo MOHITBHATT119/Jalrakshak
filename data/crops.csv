@@ -10,9 +10,9 @@ C008,Sesame,350,kharif,90,high,high,61,Low water requirement,live
 C009,Cumin,200,rabi,100,moderate,high,78,Very low water requirement,live
 C010,Mustard,300,rabi,110,moderate,moderate,67,Winter oilseed crop,live
 C011,Wheat,450,rabi,120,low,moderate,50,Moderate water winter crop,live
-C012,Chickpea (Chana),350,rabi,100,moderate,high,61,Good protein crop, moderate water,live
+C012,Chickpea (Chana),350,rabi,100,moderate,high,61,"Good protein crop, moderate water",live
 C013,Lentil (Masoor),300,rabi,100,moderate,moderate,67,Winter pulse crop,live
-C014,Green Gram (Moong),250,kharif,65,high,high,72,Short duration, water efficient,live
+C014,Green Gram (Moong),250,kharif,65,high,high,72,"Short duration, water efficient",live
 C015,Aloe Vera,200,annual,365,very_high,very_high,78,Excellent water efficiency medicinal crop,live
 C016,Dragon Fruit,350,annual,365,high,high,61,Premium high-value drought tolerant,live
 C017,Pomegranate,600,annual,365,high,high,33,High value perennial fruit,live
