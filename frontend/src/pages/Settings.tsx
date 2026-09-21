@@ -402,8 +402,6 @@ export default function Settings({ lang }: Props) {
           <InfoRow label="Frontend" value="React + TypeScript + Vite" last />
         </div>
 
-        {/* ── API ENDPOINTS ───────────────────────────────────────────────── */}
-
       </div>
 
       <style>{`
