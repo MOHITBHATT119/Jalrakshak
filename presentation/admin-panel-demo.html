@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JalRakshak AI — Admin Panel Demo</title>
+<style>
+  :root {
+    --bg: #0b1220;
+    --panel: #111a2e;
+    --panel2: #16213a;
+    --text: #e8eefc;
+    --muted: #93a4c4;
+    --accent: #38bdf8;
+    --accent2: #34d399;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --border: #243352;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+  .deck { height: 100vh; width: 100vw; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6vh 8vw;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(56,189,248,.14), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(52,211,153,.10), transparent 60%),
+      var(--bg);
+  }
+  .slide.active { display: flex; animation: fade .45s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(14px);} to { opacity: 1; transform: none;} }
+
+  .kicker { color: var(--accent); font-size: .85rem; letter-spacing: .22em; text-transform: uppercase; margin-bottom: 1rem; font-weight: 700; }
+  h1 { font-size: clamp(2.2rem, 5vw, 3.8rem); line-height: 1.08; margin-bottom: 1rem; }
+  h2 { font-size: clamp(1.6rem, 3.4vw, 2.6rem); margin-bottom: 1.4rem; }
+  h3 { font-size: 1.05rem; color: var(--accent); margin-bottom: .4rem; }
+  p, li { color: var(--muted); font-size: 1.05rem; line-height: 1.65; }
+  .lead { font-size: 1.25rem; max-width: 60ch; }
+  strong { color: var(--text); }
+  .hl { color: var(--accent); }
+  .hl2 { color: var(--accent2); }
+
+  .grid { display: grid; gap: 1rem; margin-top: 1rem; }
+  .g2 { grid-template-columns: 1fr 1fr; }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.1rem 1.2rem;
+  }
+  .card p { font-size: .95rem; }
+  .badge {
+    display: inline-block; padding: .2rem .65rem; border-radius: 999px;
+    font-size: .75rem; font-weight: 700; letter-spacing: .06em;
+    background: rgba(56,189,248,.15); color: var(--accent); border: 1px solid rgba(56,189,248,.35);
+    margin-bottom: .6rem;
+  }
+  .badge.green { background: rgba(52,211,153,.12); color: var(--accent2); border-color: rgba(52,211,153,.35); }
+  .badge.amber { background: rgba(251,191,36,.12); color: var(--warn); border-color: rgba(251,191,36,.35); }
+
+  ul.clean { list-style: none; margin-top: .6rem; }
+  ul.clean li { padding: .35rem 0 .35rem 1.4rem; position: relative; }
+  ul.clean li::before { content: "▸"; position: absolute; left: 0; color: var(--accent); }
+
+  table { width: 100%; border-collapse: collapse; margin-top: .8rem; font-size: .95rem; }
+  th, td { text-align: left; padding: .65rem .8rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--accent); font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }
+  td { color: var(--muted); }
+  td strong { color: var(--text); }
+
+  .flow { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-top: 1.2rem; }
+  .step {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 10px; padding: .7rem 1rem; font-size: .92rem; color: var(--text); font-weight: 600;
+  }
+  .arrow { color: var(--accent); font-weight: 800; }
+
+  .stat { text-align: center; }
+  .stat .num { font-size: 2.4rem; font-weight: 800; color: var(--accent); }
+  .stat .lbl { color: var(--muted); font-size: .85rem; margin-top: .2rem; }
+
+  .footer {
+    position: absolute; bottom: 2.2vh; left: 8vw; right: 8vw;
+    display: flex; justify-content: space-between; align-items: center;
+    color: #5c6f93; font-size: .8rem;
+  }
+  .progress { position: absolute; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .3s; z-index: 10; }
+  .keys { position: fixed; bottom: 1.2rem; right: 1.2rem; color: #44547a; font-size: .75rem; z-index: 20; }
+
+  .creds {
+    font-family: Consolas, monospace; background: #0a1020; border: 1px dashed var(--accent);
+    border-radius: 10px; padding: .8rem 1.1rem; color: var(--accent2); display: inline-block; margin-top: .8rem;
+  }
+  .split { display: grid; grid-template-columns: 1.1fr .9fr; gap: 2.5rem; align-items: center; }
+  @media (max-width: 900px) {
+    .g2, .g3, .g4, .split { grid-template-columns: 1fr; }
+    .slide { padding: 5vh 6vw; overflow-y: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+  <div class="progress" id="progress"></div>
+
+  <!-- 1 TITLE -->
+  <section class="slide active">
+    <div class="kicker">Live Demo Presentation</div>
+    <h1>JalRakshak AI <span class="hl">/Admin</span><br/>Administrator Command Center</h1>
+    <p class="lead">Intelligent Drought &amp; Groundwater Depletion Advisory Platform for <strong>Saurashtra, Gujarat</strong> — the admin portal that governs data, AI decisions, and field operations.</p>
+    <div class="flow">
+      <span class="step">Farmer Portal</span><span class="arrow">+</span>
+      <span class="step">Community Portal</span><span class="arrow">+</span>
+      <span class="step" style="border-color:var(--accent); color:var(--accent)">🛡 Admin Command Center</span>
+    </div>
+    <div class="footer"><span>JalRakshak AI · જળરક્ષક</span><span>1 / 12</span></div>
+  </section>
+
+  <!-- 2 PROBLEM -->
+  <section class="slide">
+    <div class="kicker">The Problem</div>
+    <h2>Groundwater is depleting faster than it recharges</h2>
+    <div class="grid g3">
+      <div class="card"><span class="badge amber">Scale</span><h3>Saurashtra crisis</h3><p>Recurring droughts, falling water tables, and erratic monsoons threaten farming livelihoods across Rajkot, Jamnagar, Junagadh &amp; beyond.</p></div>
+      <div class="card"><span class="badge amber">Data</span><h3>Fragmented sources</h3><p>CGWB, IMD and data.gov.in publish critical data — but village-level authorities rarely have it in one actionable place.</p></div>
+      <div class="card"><span class="badge amber">Trust</span><h3>Black-box AI fear</h3><p>Government users won't act on opaque recommendations. Decisions need audit trails and human approval.</p></div>
+    </div>
+    <p class="lead" style="margin-top:1.4rem">→ <strong class="hl">Admin Panel</strong> is the governance layer: curate data, audit AI, approve interventions, manage users.</p>
+    <div class="footer"><span>Problem</span><span>2 / 12</span></div>
+  </section>
+
+  <!-- 3 ARCHITECTURE -->
+  <section class="slide">
+    <div class="kicker">Architecture</div>
+    <h2>Full-stack, API-first</h2>
+    <div class="grid g4">
+      <div class="card"><span class="badge">Frontend</span><h3>React + TS</h3><p>React 18, TypeScript, Vite, React Router, Recharts, Leaflet maps, framer-motion, dark/light + EN/ગુજરાતી.</p></div>
+      <div class="card"><span class="badge">Backend</span><h3>FastAPI</h3><p>Python FastAPI, Pydantic v2, SlowAPI rate-limiting, APScheduler for daily IMD / weekly CGWB syncs.</p></div>
+      <div class="card"><span class="badge">AI</span><h3>IBM Granite</h3><p>watsonx.ai <code>granite-4-h-small</code> + 8 deterministic agents. Demo-mode fallback when API key absent.</p></div>
+      <div class="card"><span class="badge">Data</span><h3>SQLite / PG</h3><p>WAL-mode SQLite (Postgres optional). Tables: users, villages, groundwater, rainfall, water_demand, recharge, crops.</p></div>
+    </div>
+    <div class="flow">
+      <span class="step">React :5173</span><span class="arrow">→</span>
+      <span class="step">Vite proxy /api</span><span class="arrow">→</span>
+      <span class="step">FastAPI :8001</span><span class="arrow">→</span>
+      <span class="step">DB + Granite LLM</span>
+    </div>
+    <div class="footer"><span>Architecture</span><span>3 / 12</span></div>
+  </section>
+
+  <!-- 4 PANEL OVERVIEW -->
+  <section class="slide">
+    <div class="kicker">Admin Panel</div>
+    <h2>One shell · 7 sections · 22 routes</h2>
+    <div class="grid g3">
+      <div class="card"><h3>1 · Overview</h3><p>Dashboard · Hydro Atlas · Alerts</p></div>
+      <div class="card"><h3>2 · Water Intelligence</h3><p>Groundwater Explorer · Drought Monitor · Water Budget · What-If Simulator</p></div>
+      <div class="card"><h3>3 · Agriculture</h3><p>Crop Advisor</p></div>
+      <div class="card"><h3>4 · Interventions</h3><p>Recharge Planner · Community Priority · Impact · Action Plans</p></div>
+      <div class="card"><h3>5 · AI Intelligence</h3><p>Water Copilot · Agent Trace · AI Reports · Approvals</p></div>
+      <div class="card"><h3>6 · Data &amp; Field</h3><p>Data Trust · Field Reports</p></div>
+      <div class="card" style="grid-column: span 2"><h3>7 · Administration</h3><p>Farmers &amp; Users · Villages · Data Sources · Settings</p></div>
+      <div class="card" style="border-color: var(--accent2)"><span class="badge green">Shell</span><p>Collapsible sidebar · mobile drawer · theme toggle · EN/ગુ · profile menu · breadcrumbs</p></div>
+    </div>
+    <div class="footer"><span>Panel Overview</span><span>4 / 12</span></div>
+  </section>
+
+  <!-- 5 SECURITY -->
+  <section class="slide">
+    <div class="kicker">Security</div>
+    <h2>Defense in depth</h2>
+    <div class="split">
+      <div>
+        <ul class="clean">
+          <li><strong>bcrypt</strong> password hashing (cost 12) — never plaintext comparison</li>
+          <li><strong>JWT HS256</strong>: 30-min access + 7-day refresh with unique <code>jti</code></li>
+          <li><strong>Refresh rotation</strong> — old token revoked on use (replay protection)</li>
+          <li><strong>Rate limit</strong> 10 logins/min/IP + full <strong>login audit trail</strong> (IP, UA, reason)</li>
+          <li><strong>Password policy</strong>: ≥8 chars, letter + digit/special</li>
+          <li><strong>Prod fail-fast</strong> on weak/default JWT secrets</li>
+          <li><strong>Dual guards</strong>: React <code>ProtectedAdminRoute</code> + FastAPI <code>require_admin</code> on every mutating endpoint</li>
+          <li>Tokens in <strong>sessionStorage</strong> — die with the tab; 401 interceptor auto-redirects to login</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="badge">Demo credentials</span>
+        <div class="creds">username: admin<br/>password: admin@123</div>
+        <p style="margin-top:1rem">Seeded admin: <strong>Arjun Patel</strong> · Water Administrator · Rajkot</p>
+        <p style="margin-top:.6rem">RBAC roles: <strong>Water Administrator</strong> · Community · Farmer · Evaluator</p>
+        <p style="margin-top:.6rem">Suspended farmers → <strong style="color:var(--danger)">403</strong> on Farmer Portal login</p>
+      </div>
+    </div>
+    <div class="footer"><span>Security</span><span>5 / 12</span></div>
+  </section>
+
+  <!-- 6 LOGIN -->
+  <section class="slide">
+    <div class="kicker">Screen 1</div>
+    <h2>Login — split-screen Command Center</h2>
+    <div class="grid g2">
+      <div class="card">
+        <span class="badge">UI</span>
+        <ul class="clean">
+          <li>Glassmorphism brand panel: Groundwater Intelligence · Drought Early Warning · Recharge Planning · AI-Assisted Decisions</li>
+          <li>Default creds displayed on-screen for demo</li>
+          <li>Loading state: “Opening Command Center…”</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="badge green">Flow</span>
+        <div class="flow" style="margin-top:0">
+          <span class="step">POST /auth/login</span><span class="arrow">→</span>
+          <span class="step">Token pair</span><span class="arrow">→</span>
+          <span class="step">GET /auth/me</span><span class="arrow">→</span>
+          <span class="step">Dashboard</span>
+        </div>
+        <p style="margin-top:1rem">Failures written to audit log · success issues access + refresh pair.</p>
+      </div>
+    </div>
+    <div class="footer"><span>Login</span><span>6 / 12</span></div>
+  </section>
+
+  <!-- 7 DASHBOARD -->
+  <section class="slide">
+    <div class="kicker">Screen 2</div>
+    <h2>Dashboard — Saurashtra risk overview</h2>
+    <div class="grid g4">
+      <div class="card stat"><div class="num">10+</div><div class="lbl">Seed villages V001–V010</div></div>
+      <div class="card stat"><div class="num" style="color:var(--accent2)">4</div><div class="lbl">Risk dimensions per village</div></div>
+      <div class="card stat"><div class="num" style="color:var(--warn)">DEMO</div><div class="lbl">Badge when WatsonX unset</div></div>
+      <div class="card stat"><div class="num" style="color:var(--accent2)">Live</div><div class="lbl">Mode when real data ingested</div></div>
+    </div>
+    <ul class="clean" style="margin-top:1.2rem">
+      <li>KPI tiles + <strong>village risk grid</strong> with groundwater, drought, water-health &amp; water-budget scores</li>
+      <li>Graceful fallback to <strong>SEED_VILLAGES</strong> when API is down — demo never breaks</li>
+      <li><code>GET /health</code> reports <strong>data_mode</strong>: live · demo, plus per-table live/estimated row counts with provenance</li>
+    </ul>
+    <div class="footer"><span>Dashboard</span><span>7 / 12</span></div>
+  </section>
+
+  <!-- 8 AGENT TRACE -->
+  <section class="slide">
+    <div class="kicker">Screen 3 · AI Showpiece</div>
+    <h2>Agent Trace — AI you can audit</h2>
+    <p class="lead">Hit <strong>Run</strong> → 8 agents execute in sequence with a live timeline of intermediate values. <span class="hl">Not a black box.</span></p>
+    <div class="flow">
+      <span class="step">1 Groundwater</span><span class="arrow">→</span>
+      <span class="step">2 Drought</span><span class="arrow">→</span>
+      <span class="step">3 Water Health</span><span class="arrow">→</span>
+      <span class="step">4 Water Budget</span><span class="arrow">→</span>
+      <span class="step">5 Crop</span><span class="arrow">→</span>
+      <span class="step">6 Recharge</span><span class="arrow">→</span>
+      <span class="step">7 Community</span><span class="arrow">→</span>
+      <span class="step">8 Action Plan</span>
+    </div>
+    <div class="grid g3" style="margin-top:1.4rem">
+      <div class="card"><h3>Deterministic</h3><p>Same inputs → same outputs; LLM enhances explanation, never the core math.</p></div>
+      <div class="card"><h3>Traceable</h3><p><code>GET /agent-trace/{id}</code> replays every intermediate value for compliance.</p></div>
+      <div class="card"><h3>Explainable</h3><p>Each advisory carries confidence %, factors, and recommended action.</p></div>
+    </div>
+    <div class="footer"><span>Agent Trace</span><span>8 / 12</span></div>
+  </section>
+
+  <!-- 9 GOVERNANCE -->
+  <section class="slide">
+    <div class="kicker">Human-in-the-loop</div>
+    <h2>Governance: Alerts · Approvals · Field Reports</h2>
+    <div class="grid g3">
+      <div class="card">
+        <span class="badge amber">Alerts</span>
+        <h3>Early warning</h3>
+        <p>Threshold-triggered aquifer/monsoon alerts (ALT-001…) with severity, AI explanation &amp; confidence score.</p>
+      </div>
+      <div class="card">
+        <span class="badge">Approvals</span>
+        <h3>AI recommendation review</h3>
+        <p>PENDING → <strong style="color:var(--accent2)">APPROVED</strong> / <strong style="color:var(--danger)">REJECTED</strong> / TECHNICAL_REVIEW. History persisted.</p>
+      </div>
+      <div class="card">
+        <span class="badge green">Field Reports</span>
+        <h3>Citizen triage</h3>
+        <p>NEW → UNDER_REVIEW → ASSIGNED → RESOLVED/REJECTED, with AI summaries via Water Copilot.</p>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:1rem">
+      <div class="card"><h3>Action Plans</h3><p>AI-generated interventions: PLANNED → IN PROGRESS → COMPLETED per village.</p></div>
+      <div class="card"><h3>Intervention Impact</h3><p>Compare 10 types — check dam, farm pond, recharge well, percolation tank, drip, sprinkler, crop switch…</p></div>
+    </div>
+    <div class="footer"><span>Governance</span><span>9 / 12</span></div>
+  </section>
+
+  <!-- 10 DATA OPS -->
+  <section class="slide">
+    <div class="kicker">Screen 4 · Data Ops</div>
+    <h2>Data Sources — one-click sync &amp; admin JWT proof</h2>
+    <div class="split">
+      <div>
+        <ul class="clean">
+          <li><strong>CSV upload</strong> per table (villages, groundwater, rainfall, water-demand, recharge) — BOM-tolerant, column validation, upsert</li>
+          <li><strong>Preview</strong> first 100 rows · <strong>Reset</strong> table · template download</li>
+          <li><strong>One-click sync</strong>: <code>POST /data/ingest/data-gov</code> pulls the current month's real IMD district rainfall from the keyless mausam.imd.gov.in feed (rows tagged <em>live</em> only where reachable); <code>/data/ingest/cgwb</code> maps CGWB Annual Ground Water Assessment baselines to villages (tagged <em>estimated</em>)</li>
+          <li>Status gauges: live vs estimated row counts per table — provenance tag follows each row</li>
+          <li><strong>Users</strong>: create farmer, change role, suspend (403 on portal), delete</li>
+          <li><strong>Villages</strong>: CRUD with auto-generated <code>VU###</code> IDs + agent-score enrichment</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:var(--accent)">
+        <span class="badge">Live demo trick</span>
+        <h3>Prove the security</h3>
+        <p style="margin-top:.5rem">1. Open DevTools → clear <code>sessionStorage</code> token</p>
+        <p>2. Click any admin page → <strong style="color:var(--danger)">instant bounce to /admin/login</strong></p>
+        <p style="margin-top:.8rem">Or call the ingest endpoint without a token → <strong style="color:var(--danger)">403 Administrator privileges required</strong></p>
+        <p style="margin-top:.8rem">Router-level <code>Depends(require_admin)</code> on all ingestion + data-write routes.</p>
+      </div>
+    </div>
+    <div class="footer"><span>Data Ops</span><span>10 / 12</span></div>
+  </section>
+
+  <!-- 11 DEMO FLOW -->
+  <section class="slide">
+    <div class="kicker">Demo Script</div>
+    <h2>5-minute walkthrough</h2>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Talking point</th></tr></thead>
+      <tbody>
+        <tr><td><strong>1</strong></td><td><strong>Login</strong></td><td>Split-screen UI, on-screen creds → admin / admin@123</td></tr>
+        <tr><td><strong>2</strong></td><td><strong>Dashboard</strong></td><td>KPIs + village risk grid; DEMO badge if WatsonX keys absent</td></tr>
+        <tr><td><strong>3</strong></td><td><strong>Sidebar tour</strong></td><td>7 sections, 22 routes, theme + EN/ગુ toggles, responsive collapse</td></tr>
+        <tr><td><strong>4</strong></td><td><strong>Agent Trace → Run</strong></td><td>“8 agents, fully auditable intermediate values”</td></tr>
+        <tr><td><strong>5</strong></td><td><strong>Data Sources</strong></td><td>Run one-click IMD rainfall sync → <em>live</em> badge appears for reachable districts → clear token → show auto-redirect</td></tr>
+        <tr><td><strong>6</strong></td><td><strong>Users</strong></td><td>Suspend a farmer → backend 403 on portal login</td></tr>
+        <tr><td><strong>7</strong></td><td><strong>Approvals / Alerts</strong></td><td>Human-in-the-loop governance layer</td></tr>
+        <tr><td><strong>8</strong></td><td><strong>Logout</strong></td><td>Refresh token revoked server-side; sessionStorage cleared</td></tr>
+      </tbody>
+    </table>
+    <div class="footer"><span>Demo Script</span><span>11 / 12</span></div>
+  </section>
+
+  <!-- 12 CLOSING -->
+  <section class="slide">
+    <div class="kicker">Wrap-up</div>
+    <h2>Why this admin panel wins the demo</h2>
+    <div class="grid g3">
+      <div class="card"><span class="badge">Trust</span><h3>Explainable AI</h3><p>Agent traces, confidence scores &amp; approval workflows — governance, not guesswork.</p></div>
+      <div class="card"><span class="badge green">Ops</span><h3>Provenance-tracked pipeline</h3><p>One-click IMD rainfall sync (live where reachable) + CGWB baselines — every row carries a <code>live</code>/<code>estimated</code> tag.</p></div>
+      <div class="card"><span class="badge amber">Security</span><h3>Enterprise auth</h3><p>Rotating JWT, revocation, rate limits, audits, RBAC — enforced front &amp; back.</p></div>
+    </div>
+    <p class="lead" style="margin-top:1.6rem"><strong class="hl">Q&amp;A one-liner:</strong> “Admin auth is bcrypt-verified JWT with rotating refresh tokens, jti revocation, per-IP rate limiting, login audits and production fail-fast on weak secrets — enforced by both a React route guard and a FastAPI <code>require_admin</code> dependency on every mutating endpoint.”</p>
+    <div class="flow">
+      <span class="step">Backend: uvicorn main:app --port 8001</span>
+      <span class="step">Frontend: npm run dev → :5173/admin/login</span>
+    </div>
+    <div class="footer"><span>Thank you · JalRakshak AI</span><span>12 / 12</span></div>
+  </section>
+
+  <div class="keys">← → or Space to navigate</div>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let i = 0;
+  const progress = document.getElementById('progress');
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    progress.style.width = ((i + 1) / slides.length * 100) + '%';
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); show(i + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(i - 1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(slides.length - 1);
+  });
+  document.addEventListener('click', e => {
+    if (e.clientX > window.innerWidth / 2) show(i + 1); else show(i - 1);
+  });
+  show(0);
+</script>
+</body>
+</html>

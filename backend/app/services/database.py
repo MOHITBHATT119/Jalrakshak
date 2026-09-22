@@ -687,7 +687,7 @@ def upsert_groundwater_rows(rows: list):
     conn = _get_conn()
     try:
         for r in rows:
-            r["data_source"] = "live"
+            r["data_source"] = r.get("data_source", "live")
             conn.execute(f"""
                 INSERT INTO groundwater
                     (village_id,year,month,depth_m,change_from_prev_year_m,quality,data_source,updated_at)
@@ -696,7 +696,7 @@ def upsert_groundwater_rows(rows: list):
                     depth_m=excluded.depth_m,
                     change_from_prev_year_m=excluded.change_from_prev_year_m,
                     quality=excluded.quality,
-                    data_source='live',
+                    data_source=excluded.data_source,
                     updated_at={now}
             """, [
                 r["village_id"], r["year"], r["month"], r["depth_m"],
@@ -713,7 +713,7 @@ def upsert_rainfall_rows(rows: list):
     conn = _get_conn()
     try:
         for r in rows:
-            r["data_source"] = "live"
+            r["data_source"] = r.get("data_source", "live")
             conn.execute(f"""
                 INSERT INTO rainfall
                     (village_id,year,month,rainfall_mm,historical_avg_mm,deficit_pct,season,data_source,updated_at)
@@ -723,7 +723,7 @@ def upsert_rainfall_rows(rows: list):
                     historical_avg_mm=excluded.historical_avg_mm,
                     deficit_pct=excluded.deficit_pct,
                     season=excluded.season,
-                    data_source='live',
+                    data_source=excluded.data_source,
                     updated_at={now}
             """, [
                 r["village_id"], r["year"], r["month"], r.get("rainfall_mm"),

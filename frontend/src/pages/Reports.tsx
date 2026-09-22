@@ -5,6 +5,7 @@ import {
   Download, Loader2, Droplets, CloudRain, BarChart3, Bot, Home, Settings, Target,
 } from 'lucide-react';
 import { getVillages, generateReport, generateActionPlan, Village } from '../services/api';
+import { jsPDF } from 'jspdf';
 import { useTheme } from '../context/ThemeContext';
 import VillageSelect from '../components/VillageSelect';
 
@@ -140,8 +141,71 @@ function GeneratingAnimation({
   );
 }
 
+// ── PDF builder (pure jsPDF — multi-page, wraps report/plan text) ────────────
+function buildPdf({ title, subtitle, body }: { title: string; subtitle: string; body: string }) {
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const PW = 210, PH = 297, ML = 18, MR = 18, CW = PW - ML - MR;
+  const navy = [15, 32, 68] as [number, number, number];
+  const blue = [37, 99, 235] as [number, number, number];
+  const slate = [100, 116, 139] as [number, number, number];
+  const slateL = [203, 213, 225] as [number, number, number];
+  const white = [248, 250, 252] as [number, number, number];
+  const dark = [15, 23, 42] as [number, number, number];
+  const border = [51, 65, 85] as [number, number, number];
+
+  const setFill  = (c: [number, number, number]) => pdf.setFillColor(...c);
+  const setTxt   = (c: [number, number, number]) => pdf.setTextColor(...c);
+
+  let y = 0;
+  const newPage = () => {
+    pdf.addPage();
+    y = 20;
+    setFill(dark); pdf.rect(0, 0, PW, PH, 'F');
+    setFill(blue); pdf.rect(0, 0, PW, 8, 'F');
+    setTxt(white); pdf.setFontSize(8); pdf.setFont('helvetica', 'bold');
+    pdf.text('JalRakshak AI · જળરક્ષક', ML, 5.5);
+    pdf.text(title, PW - MR, 5.5, { align: 'right' });
+    setTxt(slate); pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal');
+    pdf.text(`${subtitle}`, PW - MR, 13.5, { align: 'right' });
+  };
+
+  const checkY = (needed: number) => { if (y + needed > PH - 20) newPage(); };
+
+  setFill(dark); pdf.rect(0, 0, PW, PH, 'F');
+  setFill(blue); pdf.rect(0, 0, PW, 22, 'F');
+  setFill(navy); pdf.rect(ML, 12, CW, 18, 'F');
+  setTxt(white); pdf.setFontSize(14); pdf.setFont('helvetica', 'bold');
+  pdf.text(title, ML + 3, 21);
+  setTxt(slateL); pdf.setFontSize(9); pdf.setFont('helvetica', 'normal');
+  pdf.text(`${subtitle}  |  Generated ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}`, ML + 3, 27);
+  y = 38;
+
+  // Body text wrapped, with page-break handling
+  const lines = pdf.splitTextToSize(body || '', CW - 6)
+    .reduce((acc: string[], line: string) => {
+      const empties = line === '' ? 1 : 0;
+      return [...acc, ...Array(empties || 1).fill(line)];
+    }, []);
+
+  for (const line of lines) {
+    checkY(5.4);
+    setTxt(slateL); pdf.setFontSize(9); pdf.setFont('helvetica', 'normal');
+    pdf.text(line, ML + 3, y);
+    y += 5.4;
+  }
+
+  // Footer
+  pdf.setTextColor(...border); pdf.setFontSize(7.5);
+  pdf.text('AI decision-support output — consult local authorities before significant water decisions.', ML, PH - 6);
+  pdf.text(`Page ${pdf.getNumberOfPages()}`, PW - MR, PH - 6, { align: 'right' });
+  return pdf;
+}
+
 // ── Report output card ────────────────────────────────────────────────────────
-function ReportOutput({ text, demoMode, t }: { text: string; demoMode: boolean; t: (en: string, gu: string) => string }) {
+function ReportOutput({ text, demoMode, t, title, subtitle }: {
+  text: string; demoMode: boolean; t: (en: string, gu: string) => string;
+  title?: string; subtitle?: string;
+}) {
   const [expanded, setExpanded] = useState(false);
   const preview = text.slice(0, 420);
   const hasMore = text.length > 420;
@@ -193,10 +257,15 @@ function ReportOutput({ text, demoMode, t }: { text: string; demoMode: boolean; 
         )}
         <button
           onClick={() => {
-            const a = document.createElement('a');
-            a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
-            a.download = 'water-report.txt';
-            a.click();
+            const pdfTitle = title || 'JalRakshak AI';
+            const pdf = buildPdf({
+              title: pdfTitle,
+              subtitle: `${subtitle ? subtitle + '  ·  ' : ''}${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}`,
+              body: text,
+            });
+            const safe = pdfTitle.replace(/[^a-zA-Z0-9_-]+/g, '_');
+            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            pdf.save(`${safe}_${date}.pdf`);
           }}
           style={{
             display: 'flex', alignItems: 'center', gap: 5,
@@ -449,7 +518,13 @@ export default function Reports({ selectedVillage, setSelectedVillage, lang, dem
             )}
 
             {!loadingReport && report && (
-              <ReportOutput text={report.report_text} demoMode={demoMode} t={t} />
+              <ReportOutput
+                text={report.report_text}
+                demoMode={demoMode}
+                t={t}
+                title={t('Village Water Report', 'ગામ જળ અહેવાલ')}
+                subtitle={villageLabel}
+              />
             )}
 
             {!loadingReport && !report && (
@@ -512,7 +587,13 @@ export default function Reports({ selectedVillage, setSelectedVillage, lang, dem
             )}
 
             {!loadingPlan && actionPlan && (
-              <ReportOutput text={actionPlan.action_plan} demoMode={demoMode} t={t} />
+              <ReportOutput
+                text={actionPlan.action_plan}
+                demoMode={demoMode}
+                t={t}
+                title={t('Water Action Plan', 'જળ ક્રિયા યોજના')}
+                subtitle={villageLabel}
+              />
             )}
 
             {!loadingPlan && !actionPlan && (
@@ -541,7 +622,7 @@ export default function Reports({ selectedVillage, setSelectedVillage, lang, dem
             <strong style={{ color: 'var(--text-main)' }}>{t('Important Limitations', 'મહત્ત્વની મર્યાદાઓ')}</strong><br />
             <span style={{ color: 'var(--text-muted)' }}>
               {t(
-                'This is an AI decision-support system. Reports are generated from synthetic demonstration data and AI-assisted analysis. They do not replace expert agricultural, hydrological, or engineering advice. Consult local authorities before taking significant water management decisions.',
+                'This is an AI decision-support system. Reports are generated from district baselines calibrated from CGWB and IMD references, together with village-level AI-assisted analysis. They do not replace expert agricultural, hydrological, or engineering advice. Consult local authorities before taking significant water management decisions.',
                 'આ AI નિર્ણય-સહાય પ્રણાલી છે. અહેવાલ સ્થાનિક નિષ્ણાત, કૃષિ, જળ-વિજ્ઞાન કે ઇજનેરી સલાહ બદલતી નથી.',
               )}
             </span>

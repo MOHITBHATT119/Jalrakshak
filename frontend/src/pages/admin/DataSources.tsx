@@ -250,10 +250,6 @@ function TableCard({ tableKey, meta, stat, onRefresh }: {
         <Stat label="Total Rows"   value={stat.total_rows.toString()} />
         <Stat label="Live Rows"    value={stat.live_rows.toString()}  color="#22c55e" />
         <Stat label="Estimated Rows" value={stat.estimated_rows.toString()} color="#3b82f6" />
-        <Stat label="Demo Rows"    value={stat.demo_rows.toString()}  color="#f59e0b" />
-        {tableKey !== 'villages' && (
-          <Stat label="Last Updated" value={stat.last_updated ? new Date(stat.last_updated).toLocaleString('en-IN') : '—'} />
-        )}
         <div style={{ marginLeft: 'auto', fontSize: '0.72rem', color: 'var(--text-muted)', maxWidth: 480, lineHeight: 1.6 }}>
           <span style={{ fontWeight: 600 }}>Required cols: </span>
           <code style={{ color: '#3b82f6', fontFamily: 'monospace', fontSize: '0.7rem' }}>{meta.requiredCols}</code>

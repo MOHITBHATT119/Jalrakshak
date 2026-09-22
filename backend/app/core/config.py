@@ -34,7 +34,7 @@ class Settings(BaseSettings):
 
     # Admin auth — declared here so pydantic-settings doesn't reject them
     admin_username: str = "admin"
-    admin_password: str = "jalrakshak2024"
+    admin_password: str = "admin@123"
     admin_password_hash: str = ""
     jwt_secret_key: str = "CHANGE_ME_IN_PROD_jalrakshak_2024_secret"
 

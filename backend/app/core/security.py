@@ -120,7 +120,7 @@ def _get_admin_hash() -> str:
     admin_hash = os.environ.get("ADMIN_PASSWORD_HASH", _settings.admin_password_hash)
     if admin_hash and admin_hash.startswith("$2"):
         return admin_hash
-    admin_plain = os.environ.get("ADMIN_PASSWORD", _settings.admin_password) or "jalrakshak2024"
+    admin_plain = os.environ.get("ADMIN_PASSWORD", _settings.admin_password) or "admin@123"
     return hash_password(admin_plain)
 
 
